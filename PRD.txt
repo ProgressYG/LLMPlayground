@@ -1,0 +1,772 @@
+# LLM API Playground - Product Requirements Document (PRD)
+
+## 📋 프로젝트 개요 | Project Overview
+
+### 제품 정의
+엔터프라이즈급 LLM API 프롬프트 테스팅 및 최적화 플랫폼으로, 다양한 AI 모델(OpenAI GPT, Anthropic Claude, Google Gemini) 중 선택한 단일 모델에 대해 반복 실행과 파라미터 조정을 통해 프롬프트를 최적화할 수 있는 전문가용 도구입니다.
+
+### 핵심 가치 제안
+- **정밀한 프롬프트 튜닝**: 단일 모델에 집중하여 깊이 있는 프롬프트 최적화
+- **반복 실험을 통한 일관성 검증**: 동일 조건에서의 반복 실행으로 응답 안정성 확인
+- **직관적인 파라미터 조정**: Temperature, Max Tokens, Top P 실시간 조정
+
+### 타겟 사용자
+- Data Intelligence Engineers
+- AI/ML 개발자
+- 프롬프트 엔지니어
+- 기술 의사결정자
+
+---
+
+## 🛠 기술 스택 | Tech Stack
+
+### Backend Architecture
+```yaml
+Core Services:
+  - Python 3.11+: 
+    - LLM API 통합 레이어
+    - 비동기 처리 (asyncio)
+    - 응답 스트리밍 처리
+    - python-dotenv (API 키 관리)
+  
+  - Ruby on Rails 7.1.2:
+    - RESTful API 엔드포인트
+    - WebSocket 실시간 통신
+    - 인증 및 권한 관리
+    - dotenv-rails (환경 변수 관리)
+    
+Database:
+  - PostgreSQL 16.0:
+    - 위치: /Volumes/ygmac_external/pgdata
+    - 프롬프트 히스토리 저장
+    - 모델 메타데이터 관리
+```
+
+### Frontend Architecture
+```yaml
+UI Framework:
+  - Tailwind CSS: 
+    - Dark mode 기본 적용
+    - 반응형 그리드 시스템 (70:30 레이아웃)
+    - 커스텀 컴포넌트 라이브러리
+  
+  - JavaScript Framework:
+    - Stimulus.js (Rails 통합)
+    - 실시간 업데이트를 위한 Turbo
+```
+
+---
+
+## 🎨 화면 구성 및 레이아웃
+
+### 전체 레이아웃 구조
+```
+┌─────────────────────────────────────────────────────────┐
+│         LLM API Playground            [🔑 API Status]   │
+├──────────────────────────────┬──────────────────────────┤
+│                              │                          │
+│     메인 작업 영역 (70%)       │    컨트롤 패널 (30%)      │
+│                              │                          │
+│  ┌────────────────────────┐  │  ┌────────────────────┐ │
+│  │  모델 선택 (드롭다운)     │  │  │    Options        │ │
+│  │  [gpt-4o-mini ▼]       │  │  │                   │ │
+│  └────────────────────────┘  │  │  Temperature      │ │
+│                              │  │  [====|----] 1.0  │ │
+│  ┌────────────────────────┐  │  │                   │ │
+│  │   SYSTEM               │  │  │  Max Tokens       │ │
+│  │   ┌─────────────────┐  │  │  │  [========] 2031  │ │
+│  │   │ 시스템 프롬프트   │  │  │  │                   │ │
+│  │   │ 입력 영역...     │  │  │  │  Top P            │ │
+│  │   └─────────────────┘  │  │  │  [=======|] 0.4   │ │
+│  └────────────────────────┘  │  └────────────────────┘ │
+│                              │                          │
+│  ┌────────────────────────┐  │  ┌────────────────────┐ │
+│  │   USER                 │  │  │    Control         │ │
+│  │   ┌─────────────────┐  │  │  │                   │ │
+│  │   │ 사용자 프롬프트   │  │  │  │  Iteration: [2]   │ │
+│  │   │ 입력 영역...     │  │  │  │                   │ │
+│  │   └─────────────────┘  │  │  └────────────────────┘ │
+│  │   [추가] [실행하기]     │  │                          │
+│  └────────────────────────┘  │  ┌────────────────────┐ │
+│                              │  │  📊 Reference      │ │
+│  ┌────────────────────────┐  │  │  [Price Info]     │ │
+│  │   History Area         │  │  └────────────────────┘ │
+│  │   ┌──┬──┬──┬──┐       │  │                          │
+│  │   │#1│#2│  │  │       │  │                          │
+│  │   └──┴──┴──┴──┘       │  │                          │
+│  │   [실행 결과 표시]      │  │                          │
+│  └────────────────────────┘  │                          │
+└──────────────────────────────┴──────────────────────────┘
+```
+
+---
+
+## 🔧 상세 기능 명세
+
+### 1. 모델 선택 시스템 (단일 모델 선택)
+
+#### 1.1 모델 드롭다운 UI
+```yaml
+UI 구성:
+  - 드롭다운 선택 박스 (단일 선택)
+  - 선택된 모델의 가격 정보 표시
+  - 모델 성능 특성 아이콘 표시
+  - API 키 설정 여부 표시
+
+표시 형식:
+  ┌─────────────────────────────────┐
+  │ 🤖 Select Model         ▼      │
+  ├─────────────────────────────────┤
+  │ Claude 3.5 Haiku               │
+  │ 💰 $0.80/$4.00 | ⚡ Fast       │
+  ├─────────────────────────────────┤
+  │ Claude Sonnet 4                │
+  │ 💰 $3.00/$15.00 | ⚖️ Balanced  │
+  ├─────────────────────────────────┤
+  │ Claude Opus 4.1                │
+  │ 💰 $15.00/$75.00 | 🧠 Advanced │
+  └─────────────────────────────────┘
+
+API 키 없는 모델:
+  - 회색 처리 (disabled)
+  - 툴팁: "API key not configured in .env"
+```
+
+#### 1.2 모델 데이터 구조
+```javascript
+const models = {
+  "claude-3.5-haiku": {
+    provider: "Anthropic",
+    displayName: "Claude 3.5 Haiku",
+    icon: "⚡",
+    characteristics: "Fast & Efficient",
+    pricing: {
+      input: 0.80,  // per 1M tokens
+      output: 4.00,
+      display: "$0.80/$4.00"
+    },
+    apiEndpoint: "https://api.anthropic.com/v1/messages",
+    maxTokens: 4096,
+    envKey: "ANTHROPIC_API_KEY"  // .env 파일에서 읽을 키 이름
+  },
+  
+  "claude-sonnet-4": {
+    provider: "Anthropic",
+    displayName: "Claude Sonnet 4",
+    icon: "⚖️",
+    characteristics: "Balanced Performance",
+    pricing: {
+      input: 3.00,
+      output: 15.00,
+      display: "$3.00/$15.00"
+    },
+    maxTokens: 4096,
+    envKey: "ANTHROPIC_API_KEY"
+  },
+  
+  "claude-opus-4.1": {
+    provider: "Anthropic",
+    displayName: "Claude Opus 4.1",
+    icon: "🧠",
+    characteristics: "Advanced Reasoning",
+    pricing: {
+      input: 15.00,
+      output: 75.00,
+      display: "$15.00/$75.00"
+    },
+    maxTokens: 4096,
+    envKey: "ANTHROPIC_API_KEY"
+  },
+  
+  "gemini-2.5-flash": {
+    provider: "Google",
+    displayName: "Gemini 2.5 Flash",
+    icon: "⚡",
+    characteristics: "Ultra Fast",
+    pricing: {
+      input: 0.10,
+      output: 0.40,
+      display: "$0.10/$0.40"
+    },
+    maxTokens: 8192,
+    envKey: "GOOGLE_GEMINI_API_KEY"
+  },
+  
+  "gemini-2.5-pro": {
+    provider: "Google",
+    displayName: "Gemini 2.5 Pro",
+    icon: "💎",
+    characteristics: "Professional Grade",
+    pricing: {
+      input: 1.25,
+      output: 10.00,
+      display: "$1.25/$10.00"
+    },
+    maxTokens: 8192,
+    envKey: "GOOGLE_GEMINI_API_KEY"
+  },
+  
+  "gpt-5-mini": {
+    provider: "OpenAI",
+    displayName: "GPT-5 Mini",
+    icon: "🔹",
+    characteristics: "Cost Effective",
+    pricing: {
+      input: 0.25,
+      output: 2.00,
+      display: "$0.25/$2.00"
+    },
+    maxTokens: 4096,
+    envKey: "OPENAI_API_KEY"
+  },
+  
+  "gpt-5": {
+    provider: "OpenAI",
+    displayName: "GPT-5",
+    icon: "🔷",
+    characteristics: "Latest GPT-5",
+    pricing: {
+      input: 1.25,
+      output: 10.00,
+      display: "$1.25/$10.00"
+    },
+    maxTokens: 8192,
+    envKey: "OPENAI_API_KEY"
+  }
+};
+```
+
+#### 1.3 동적 모델 추가 기능
+```yaml
+기능:
+  - 관리자 설정에서 새 모델 추가
+  - .env 파일에 새로운 API 키 추가
+  - 모델 설정 JSON 파일 수정
+  - 서버 재시작으로 적용
+
+추가 가능 필드:
+  - Model ID
+  - Display Name
+  - Provider
+  - API Endpoint
+  - Input/Output Pricing
+  - Max Tokens Limit
+  - Environment Key Name
+```
+
+### 2. API 키 관리 시스템 (.env 파일 방식)
+
+#### 2.1 .env 파일 구조
+```bash
+# .env 파일 예시
+# OpenAI
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
+
+# Anthropic Claude
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx
+
+# Google Gemini  
+GOOGLE_GEMINI_API_KEY=AIzaxxxxxxxxxxxxxxxxxxxxx
+
+# Optional: API 설정
+API_REQUEST_TIMEOUT=30
+API_MAX_RETRIES=3
+```
+
+#### 2.2 API 키 로드 및 검증
+```ruby
+# Ruby on Rails 구현 예시
+class ApiKeyManager
+  def self.load_keys
+    {
+      openai: ENV['OPENAI_API_KEY'],
+      anthropic: ENV['ANTHROPIC_API_KEY'],
+      google: ENV['GOOGLE_GEMINI_API_KEY']
+    }
+  end
+  
+  def self.validate_key(provider)
+    key = load_keys[provider]
+    return false if key.nil? || key.empty?
+    
+    # 키 형식 검증
+    case provider
+    when :openai
+      key.start_with?('sk-')
+    when :anthropic  
+      key.start_with?('sk-ant-')
+    when :google
+      key.start_with?('AIza')
+    else
+      false
+    end
+  end
+end
+```
+
+```python
+# Python 구현 예시
+from dotenv import load_dotenv
+import os
+
+class ApiKeyManager:
+    def __init__(self):
+        load_dotenv()  # .env 파일 로드
+        
+    def get_key(self, provider):
+        keys = {
+            'openai': os.getenv('OPENAI_API_KEY'),
+            'anthropic': os.getenv('ANTHROPIC_API_KEY'),
+            'google': os.getenv('GOOGLE_GEMINI_API_KEY')
+        }
+        return keys.get(provider)
+    
+    def is_key_available(self, provider):
+        key = self.get_key(provider)
+        return key is not None and len(key) > 0
+```
+
+#### 2.3 API 키 상태 표시
+```yaml
+위치: 헤더 우측 상단
+표시 형식:
+  - 🔑 아이콘 + 상태 색상
+  - 초록색: 모든 키 설정됨
+  - 노란색: 일부 키만 설정됨  
+  - 빨간색: 키 설정 안됨
+
+상태 표시 디자인:
+  ┌─────────────────────┐
+  │ 🔑 API Status       │
+  └─────────────────────┘
+
+툴팁 (호버 시):
+  ┌─────────────────────┐
+  │ API Key Status      │
+  ├─────────────────────┤
+  │ OpenAI: ✅          │
+  │ Anthropic: ✅       │
+  │ Gemini: ❌          │
+  ├─────────────────────┤
+  │ Configure in .env   │
+  └─────────────────────┘
+```
+
+#### 2.4 에러 처리
+```yaml
+키 없음 에러:
+  - 모달 타입: Warning
+  - 메시지: "API key not configured"
+  - 설명: "Please add OPENAI_API_KEY to .env file and restart the server"
+  - 액션: [OK] 버튼
+
+키 무효 에러:
+  - 모달 타입: Error
+  - 메시지: "Invalid API key"
+  - 설명: "The API key in .env file appears to be invalid. Please check and update."
+  - 액션: [Retry] [Cancel] 버튼
+
+연결 실패:
+  - 인라인 에러 메시지
+  - "Failed to connect to OpenAI API. Please check your API key and network connection."
+```
+
+### 3. 프롬프트 입력 시스템
+
+#### 3.1 System Prompt
+```yaml
+특징:
+  - 레이블: "SYSTEM"
+  - 자동 확장 텍스트 영역 (최소 3줄, 최대 15줄)
+  - 문법 하이라이팅 지원
+  - 템플릿 저장/불러오기 버튼
+  
+UI 요소:
+  ┌──────────────────────────────────┐
+  │ SYSTEM              [📑] [💾]    │
+  ├──────────────────────────────────┤
+  │ 날씨요청                          │
+  │                                  │
+  │                                  │
+  └──────────────────────────────────┘
+
+기본값: "" (빈 값)
+플레이스홀더: "Enter system instructions..."
+```
+
+#### 3.2 User Prompt
+```yaml
+특징:
+  - 레이블: "USER"
+  - 메인 입력 영역 (최소 5줄, 최대 20줄)
+  - 변수 치환 지원 {{variable}}
+  - 파일 첨부 기능 (텍스트, 이미지)
+  
+UI 요소:
+  ┌──────────────────────────────────┐
+  │ USER                 [📎] [🕐]   │
+  ├──────────────────────────────────┤
+  │ Enter your prompt here...        │
+  │                                  │
+  │                                  │
+  │                                  │
+  └──────────────────────────────────┘
+  
+액션 버튼:
+  - [추가]: 프롬프트 히스토리에 저장
+  - [실행하기]: 선택된 모델로 실행
+
+단축키:
+  - Cmd/Ctrl + Enter: 실행
+  - Cmd/Ctrl + S: 프롬프트 저장
+```
+
+### 4. 파라미터 옵션 (Options Panel)
+
+#### 4.1 Temperature
+```yaml
+컴포넌트: 슬라이더 + 숫자 입력
+레이블: "Temperature"
+범위: 0.0 ~ 2.0
+기본값: 1.0
+단계: 0.1
+
+시각적 표현:
+  Temperature
+  [========|--------] 1.0
+  
+  0 ← Conservative    Creative → 2
+
+툴팁:
+  "생성되는 문장의 창의성(랜덤성)을 조절
+   낮을수록 일관된 답변, 높을수록 창의적인 답변"
+
+프리셋 버튼:
+  [0.3] [0.7] [1.0] [1.5]
+```
+
+#### 4.2 Max Tokens
+```yaml
+컴포넌트: 슬라이더 + 숫자 입력
+레이블: "Max Tokens"
+범위: 1 ~ 4096 (모델별 최대값 자동 적용)
+기본값: 2031
+단계: 1
+
+시각적 표현:
+  Max Tokens
+  [================|----] 2031
+  
+  Min: 1    Max: 4096
+
+툴팁:
+  "응답에서 사용할 최대 토큰 수를 제한
+   50: 한두 문장
+   256: 단락 수준
+   2048: 긴 답변"
+
+빠른 선택:
+  [256] [512] [1024] [2048] [MAX]
+```
+
+#### 4.3 Top P (Nucleus Sampling)
+```yaml
+컴포넌트: 슬라이더 + 숫자 입력
+레이블: "Top P"
+범위: 0.0 ~ 1.0
+기본값: 0.4
+단계: 0.05
+
+시각적 표현:
+  Top P
+  [=======|-------------] 0.4
+  
+  0 ← Focused    Diverse → 1
+
+툴팁:
+  "확률 기반으로 단어 선택 폭을 제한
+   낮을수록 집중적, 높을수록 다양한 표현"
+
+프리셋:
+  [0.1] [0.4] [0.7] [0.9]
+```
+
+### 5. 실행 제어 (Control Panel)
+
+#### 5.1 Iteration 설정
+```yaml
+컴포넌트: 숫자 입력 + 스테퍼 버튼
+레이블: "Iteration"
+범위: 1 ~ 10
+기본값: 2
+
+UI 표현:
+  ┌─────────────────────┐
+  │ Control             │
+  ├─────────────────────┤
+  │ Iteration: [-][2][+]│
+  └─────────────────────┘
+
+동작:
+  - 동일한 프롬프트를 설정된 횟수만큼 반복 실행
+  - 각 실행은 독립적인 API 호출
+  - 모든 결과는 개별 탭으로 표시
+
+설명:
+  "동일한 입력을 여러 번 실행하여 결과를 반복 생성합니다"
+```
+
+### 6. 결과 출력 시스템
+
+#### 6.1 History Area 구조
+```yaml
+레이아웃: 탭 기반 인터페이스
+위치: 메인 작업 영역 하단
+
+탭 구성:
+  - Iteration별 독립 탭 (#1, #2, #3...)
+  - 활성 탭 하이라이트 (Dark mode 적용)
+  - 탭 호버 시 실행 정보 툴팁
+
+탭 헤더 예시:
+  ┌────┬────┬────┬────┐
+  │ #1 │ #2 │ #3 │ +  │
+  └────┴────┴────┴────┘
+  (활성 탭은 밝은 배경)
+```
+
+#### 6.2 개별 결과 카드
+```yaml
+구조:
+  ┌──────────────────────────────────┐
+  │ Iteration #1         [📋] [💾]   │
+  ├──────────────────────────────────┤
+  │ Model: GPT-4o Mini               │
+  │ Time: 1,234ms | Tokens: 523/1,024│
+  ├──────────────────────────────────┤
+  │ [응답 내용 표시 영역]             │
+  │                                  │
+  │ 마크다운 렌더링된 응답...         │
+  │ • 코드 블록 문법 하이라이팅       │
+  │ • 테이블 렌더링                  │
+  │ • 링크 클릭 가능                 │
+  │                                  │
+  ├──────────────────────────────────┤
+  │ [👍] [👎] | Copy | Export        │
+  └──────────────────────────────────┘
+
+기능:
+  - 📋: 클립보드 복사
+  - 💾: JSON/Markdown 저장
+  - 👍/👎: 품질 평가
+  - Copy: 텍스트만 복사
+  - Export: 포맷 유지 내보내기
+```
+
+#### 6.3 결과 비교 모드
+```yaml
+활성화: 2개 이상의 Iteration 완료 시
+버튼: [Compare Results]
+
+비교 뷰:
+  ┌─────────────┬─────────────┐
+  │ Iteration 1 │ Iteration 2 │
+  ├─────────────┼─────────────┤
+  │ 응답 내용   │ 응답 내용   │
+  │             │             │
+  │ [차이점     │ [차이점     │
+  │  하이라이트] │  하이라이트] │
+  └─────────────┴─────────────┘
+
+비교 정보:
+  - 응답 시간 차이
+  - 토큰 사용량 차이
+  - 응답 길이 비교
+  - 주요 차이점 하이라이팅
+```
+
+#### 6.4 실행 상태 표시
+```yaml
+실행 중:
+  - 프로그레스 바 표시
+  - "Executing iteration 2 of 5..."
+  - 취소 버튼 활성화
+  - 스트리밍 응답 실시간 표시
+
+완료:
+  - 성공: 초록색 체크 아이콘
+  - 실패: 빨간색 X 아이콘
+  - 경고: 노란색 ! 아이콘
+
+에러 처리:
+  - 에러 메시지 표시
+  - 재시도 버튼
+  - 에러 상세 정보 토글
+```
+
+### 7. Reference Link
+
+#### 7.1 Price Reference 버튼
+```yaml
+위치: Control 패널 하단
+레이블: "📊 Reference"
+버튼 텍스트: "[Price Info]"
+
+동작:
+  - 클릭 시 모달 창 오픈
+  - https://pricepertoken.com/ iframe 임베드
+  
+모달 사양:
+  - 크기: 화면의 80% (max-width: 1200px)
+  - 배경: 반투명 오버레이 (Dark mode)
+  - 닫기 방법:
+    - X 버튼
+    - ESC 키
+    - 외부 영역 클릭
+  - 추가 링크: "Open in new tab →"
+
+모달 디자인:
+  ┌────────────────────────────┐
+  │ Price Reference        [X] │
+  ├────────────────────────────┤
+  │                            │
+  │   [iframe 콘텐츠]          │
+  │                            │
+  ├────────────────────────────┤
+  │ [Open in new tab →]        │
+  └────────────────────────────┘
+```
+
+---
+
+## 🎨 UI/UX 디자인 시스템
+
+### Dark Mode 색상 팔레트
+```yaml
+배경:
+  - Primary Background: #0F172A (slate-900)
+  - Secondary Background: #1E293B (slate-800)
+  - Card Background: #334155 (slate-700)
+  - Hover Background: #475569 (slate-600)
+
+텍스트:
+  - Primary Text: #F1F5F9 (slate-100)
+  - Secondary Text: #CBD5E1 (slate-300)
+  - Muted Text: #64748B (slate-500)
+  - Label Text: #94A3B8 (slate-400)
+
+액센트:
+  - Primary Action: #3B82F6 (blue-500)
+  - Success: #10B981 (emerald-500)
+  - Warning: #F59E0B (amber-500)
+  - Error: #EF4444 (red-500)
+  - Info: #06B6D4 (cyan-500)
+
+테두리:
+  - Default Border: #475569 (slate-600)
+  - Focus Border: #3B82F6 (blue-500)
+  - Hover Border: #64748B (slate-500)
+```
+
+### 컴포넌트 스타일 가이드
+```yaml
+버튼:
+  - Primary: 파란색 배경, 흰색 텍스트
+  - Secondary: 투명 배경, 테두리, 파란색 텍스트
+  - Ghost: 투명 배경, 호버 시 배경색 변경
+  - 모든 버튼 둥근 모서리 (border-radius: 6px)
+
+입력 필드:
+  - 어두운 배경 (#1E293B)
+  - 밝은 테두리 호버/포커스 시
+  - 플레이스홀더 텍스트 (#64748B)
+
+카드:
+  - 배경: #334155
+  - 테두리: 1px solid #475569
+  - 그림자: 미세한 다크 그림자
+  - 패딩: 16px ~ 24px
+
+슬라이더:
+  - 트랙: #475569
+  - 채워진 부분: #3B82F6
+  - 썸: 흰색 원형, 파란색 테두리
+```
+
+### 반응형 레이아웃
+```yaml
+Desktop (1920px+):
+  - 70:30 레이아웃 유지
+  - 모든 기능 완전 표시
+
+Laptop (1366px ~ 1919px):
+  - 70:30 레이아웃 유지
+  - 약간 축소된 패딩
+
+Tablet (768px ~ 1365px):
+  - 단일 컬럼 레이아웃
+  - Options 패널 접기 가능
+  - 모바일 친화적 버튼 크기
+
+Mobile (< 768px):
+  - 완전 모바일 최적화
+  - 스택형 레이아웃
+  - 터치 최적화 인터페이스
+```
+
+### 애니메이션 및 트랜지션
+```yaml
+기본 트랜지션:
+  - Duration: 200ms
+  - Easing: ease-in-out
+  - Properties: background, border, opacity
+
+로딩 애니메이션:
+  - 스켈레톤 로더
+  - 펄스 애니메이션
+  - 프로그레스 바
+
+인터랙션:
+  - 버튼: 클릭 시 스케일 다운 (0.98)
+  - 카드: 호버 시 약간 상승
+  - 탭: 슬라이드 전환
+```
+
+## 📌 주요 기능 요약
+
+### 핵심 기능
+1. **단일 모델 선택**: 7개 주요 LLM 모델 중 하나 선택
+2. **API 키 관리**: .env 파일을 통한 간단한 키 관리
+3. **프롬프트 입력**: System/User 프롬프트 분리 입력
+4. **파라미터 조정**: Temperature, Max Tokens, Top P 실시간 조정
+5. **반복 실행**: 1~10회 반복 실행으로 일관성 검증
+6. **결과 표시**: 탭 기반 개별 결과 표시 및 비교
+7. **가격 참조**: 외부 가격 정보 모달 제공
+
+### 사용자 워크플로우
+```
+1. .env 파일에 API 키 설정
+   ↓
+2. 서버 실행
+   ↓
+3. 모델 선택 (드롭다운)
+   ↓
+4. System Prompt 입력 (선택적)
+   ↓
+5. User Prompt 입력 (필수)
+   ↓
+6. 파라미터 조정 (Options)
+   ↓
+7. 반복 횟수 설정 (Iteration)
+   ↓
+8. 실행하기 버튼 클릭
+   ↓
+9. 결과 확인 (탭별 보기/비교 모드)
+```
+
+### 특별 기능
+- **프롬프트 템플릿**: 자주 사용하는 프롬프트 저장/불러오기
+- **실시간 스트리밍**: 응답 생성 과정 실시간 표시
+- **결과 내보내기**: JSON/Markdown 형식 지원
+- **로컬호스트 최적화**: 개인 개발 환경에 최적화된 설정
+이 PRD는 LLM API Playground의 핵심 기능과 UI/UX 디자인에 집중하여, 개발자가 즉시 구현 가능한 명확한 사양을 제공합니다. 특히 localhost 환경에서 .env 파일을 통한 간단한 API 키 관리 방식을 채택하여 빠른 개발과 테스트가 가능하도록 설계되었습니다.

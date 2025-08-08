@@ -1,0 +1,696 @@
+<div class="min-h-screen flex flex-col" data-controller="export compare">
+  <!-- Header -->
+  <header class="bg-secondary border-b border-default px-6 py-4">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-white">LLM API Playground</h1>
+      
+      <!-- API Status Indicator -->
+      <div class="flex items-center space-x-2" data-controller="api-status">
+        <span class="text-secondary">🔑 API Status</span>
+        <% 
+          all_configured = @api_status.values.all? { |v| v[:available] }
+          some_configured = @api_status.values.any? { |v| v[:available] }
+          status_color = all_configured ? 'text-green-500' : (some_configured ? 'text-yellow-500' : 'text-red-500')
+        %>
+        <span class="<%= status_color %>">●</span>
+        
+        <!-- Tooltip -->
+        <div class="relative group">
+          <span class="text-muted cursor-help">ⓘ</span>
+          <div class="absolute right-0 top-6 w-64 p-3 bg-card border border-default rounded-lg shadow-lg hidden group-hover:block z-50">
+            <p class="text-sm font-semibold mb-2">API Key Status</p>
+            <% @api_status.each do |provider, status| %>
+              <div class="flex justify-between items-center py-1">
+                <span class="text-secondary capitalize"><%= provider %></span>
+                <span class="<%= status[:available] ? 'text-green-500' : 'text-red-500' %>">
+                  <%= status[:available] ? '✅' : '❌' %>
+                </span>
+              </div>
+            <% end %>
+            <p class="text-xs text-muted mt-2">Configure in .env file</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex">
+    <!-- Main Work Area (70%) -->
+    <div class="flex-[7] p-6 space-y-6 border-r border-default overflow-y-auto">
+      
+      <!-- Model Selection -->
+      <div class="bg-secondary rounded-lg p-4">
+        <label class="block text-gray-200 text-sm font-medium mb-2">
+          🤖 Select Model
+        </label>
+        <select id="model-select" 
+                class="w-full bg-card text-white border border-default rounded-lg px-4 py-3 focus:border-focus focus:outline-none"
+                data-controller="model-select">
+          <option value="">Choose a model...</option>
+          <% @models.each do |model| %>
+            <option value="<%= model[:id] %>" 
+                    data-available="<%= model[:available] %>"
+                    data-pricing="<%= model[:pricing][:display] %>"
+                    data-max-tokens="<%= model[:max_tokens] %>"
+                    <%= 'disabled' unless model[:available] %>>
+              <%= model[:icon] %> <%= model[:display_name] %> - <%= model[:pricing][:display] %> 
+              <%= model[:available] ? '' : '(API key required)' %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+
+      <!-- System Prompt -->
+      <div class="bg-secondary rounded-lg p-4">
+        <div class="flex justify-between items-center mb-2">
+          <label class="text-gray-200 text-sm font-medium">SYSTEM</label>
+          <div class="space-x-2">
+            <button class="text-muted hover:text-primary" title="Load Template">📑</button>
+            <button class="text-muted hover:text-primary" title="Save Template">💾</button>
+          </div>
+        </div>
+        <textarea id="system-prompt"
+                  class="w-full bg-card text-white border border-default rounded-lg px-4 py-3 focus:border-focus focus:outline-none resize-vertical placeholder-gray-400"
+                  rows="3"
+                  placeholder="Enter system instructions..."></textarea>
+      </div>
+
+      <!-- User Prompt -->
+      <div class="bg-secondary rounded-lg p-4">
+        <div class="flex justify-between items-center mb-2">
+          <label class="text-gray-200 text-sm font-medium">USER</label>
+          <div class="space-x-2">
+            <button class="text-muted hover:text-primary" title="Attach File">📎</button>
+            <button class="text-muted hover:text-primary" title="History">🕐</button>
+          </div>
+        </div>
+        <textarea id="user-prompt"
+                  class="w-full bg-card text-white border border-default rounded-lg px-4 py-3 focus:border-focus focus:outline-none resize-vertical placeholder-gray-400"
+                  rows="5"
+                  placeholder="Enter your prompt here..."
+                  data-controller="prompt-input"></textarea>
+        <div class="flex justify-end mt-3 space-x-3">
+          <button class="px-4 py-2 bg-card text-secondary border border-default rounded-lg hover:bg-hover">
+            Add to History
+          </button>
+          <button id="execute-btn"
+                  class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                  onclick="executePrompt()">
+            Execute
+          </button>
+        </div>
+      </div>
+
+      <!-- Results Area -->
+      <div class="bg-secondary rounded-lg p-4">
+        <div class="flex items-center mb-3">
+          <label class="text-gray-200 text-sm font-medium">History Area</label>
+        </div>
+        
+        <!-- Tab Headers -->
+        <div class="flex border-b border-default mb-4" data-controller="tabs">
+          <div class="flex space-x-1" id="result-tabs">
+            <!-- Tabs will be dynamically added here -->
+          </div>
+          <button class="px-3 py-1 text-muted hover:text-primary">+</button>
+        </div>
+        
+        <!-- Tab Content -->
+        <div id="result-content" class="min-h-[300px] max-h-[600px] overflow-y-auto">
+          <div class="text-muted text-center py-12">
+            No results yet. Execute a prompt to see results here.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control Panel (30%) -->
+    <div class="flex-[3] p-6 space-y-6 bg-primary overflow-y-auto">
+      
+      <!-- Options Panel -->
+      <div class="bg-secondary rounded-lg p-4">
+        <h3 class="text-gray-200 text-sm font-medium mb-4">Options</h3>
+        
+        <!-- Temperature -->
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-gray-300 text-sm">Temperature</label>
+            <span id="temperature-value" class="text-white text-sm font-mono">1.0</span>
+          </div>
+          <input type="range" 
+                 id="temperature-slider"
+                 min="0" max="2" step="0.1" value="1.0"
+                 class="w-full"
+                 data-controller="parameter-slider"
+                 data-parameter-slider-target="temperature">
+          <div class="flex justify-between text-xs text-muted mt-1">
+            <span>← Conservative</span>
+            <span>Creative →</span>
+          </div>
+          <div class="flex space-x-1 mt-2">
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="0.3">0.3</button>
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="0.7">0.7</button>
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="1.0">1.0</button>
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="1.5">1.5</button>
+          </div>
+        </div>
+
+        <!-- Max Tokens -->
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-gray-300 text-sm">Max Tokens</label>
+            <span id="max-tokens-value" class="text-white text-sm font-mono">2031</span>
+          </div>
+          <input type="range" 
+                 id="max-tokens-slider"
+                 min="1" max="4096" step="1" value="2031"
+                 class="w-full"
+                 data-controller="parameter-slider"
+                 data-parameter-slider-target="maxTokens">
+          <div class="flex justify-between text-xs text-muted mt-1">
+            <span>Min: 1</span>
+            <span>Max: <span id="max-tokens-limit">4096</span></span>
+          </div>
+          <div class="flex space-x-1 mt-2">
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="256">256</button>
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="512">512</button>
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="1024">1024</button>
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="2048">2048</button>
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="max">MAX</button>
+          </div>
+        </div>
+
+        <!-- Top P -->
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-gray-300 text-sm">Top P</label>
+            <span id="top-p-value" class="text-white text-sm font-mono">0.4</span>
+          </div>
+          <input type="range" 
+                 id="top-p-slider"
+                 min="0" max="1" step="0.05" value="0.4"
+                 class="w-full"
+                 data-controller="parameter-slider"
+                 data-parameter-slider-target="topP">
+          <div class="flex justify-between text-xs text-muted mt-1">
+            <span>← Focused</span>
+            <span>Diverse →</span>
+          </div>
+          <div class="flex space-x-1 mt-2">
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="0.1">0.1</button>
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="0.4">0.4</button>
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="0.7">0.7</button>
+            <button class="px-2 py-1 text-xs bg-card text-white rounded hover:bg-hover" data-value="0.9">0.9</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Control Panel -->
+      <div class="bg-secondary rounded-lg p-4">
+        <h3 class="text-gray-200 text-sm font-medium mb-4">Control</h3>
+        
+        <div class="flex items-center justify-between">
+          <label class="text-gray-300 text-sm">Iteration:</label>
+          <div class="flex items-center space-x-2">
+            <button id="iteration-minus" class="px-2 py-1 bg-card text-white rounded hover:bg-hover">-</button>
+            <input type="number" 
+                   id="iteration-count"
+                   min="1" max="10" value="2"
+                   class="w-16 bg-card text-white text-center border border-default rounded px-2 py-1">
+            <button id="iteration-plus" class="px-2 py-1 bg-card text-white rounded hover:bg-hover">+</button>
+          </div>
+        </div>
+        
+        <p class="text-xs text-muted mt-2">
+          Run the same prompt multiple times to test consistency
+        </p>
+      </div>
+
+      <!-- Reference -->
+      <div class="bg-secondary rounded-lg p-4">
+        <h3 class="text-gray-200 text-sm font-medium mb-4">📊 Reference</h3>
+        <button id="price-info-btn"
+                class="w-full px-4 py-2 bg-card text-secondary border border-default rounded-lg hover:bg-hover"
+                data-controller="price-modal">
+          Price Info
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Global functions for immediate access
+let currentPollInterval = null;
+let resultsData = {};
+let allPollIntervals = [];
+
+// Clean up any intervals when page loads
+window.addEventListener('beforeunload', () => {
+  if (currentPollInterval) {
+    clearInterval(currentPollInterval);
+  }
+  allPollIntervals.forEach(interval => {
+    clearInterval(interval);
+  });
+});
+
+// Also clean up on page visibility change
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && currentPollInterval) {
+    console.log("Page hidden, pausing polling");
+    clearInterval(currentPollInterval);
+    allPollIntervals.forEach(interval => {
+      clearInterval(interval);
+    });
+    allPollIntervals = [];
+    currentPollInterval = null;
+  }
+});
+
+function executePrompt() {
+  console.log("Execute button clicked!");
+  
+  // Clear ALL existing polling intervals
+  if (currentPollInterval) {
+    clearInterval(currentPollInterval);
+    currentPollInterval = null;
+  }
+  
+  // Clear any other polling intervals
+  allPollIntervals.forEach(interval => {
+    clearInterval(interval);
+  });
+  allPollIntervals = [];
+  
+  // Clear tabs
+  const tabsContainer = document.getElementById("result-tabs");
+  if (tabsContainer) {
+    tabsContainer.innerHTML = "";
+  }
+  
+  // Clear previous results immediately
+  const contentContainer = document.getElementById("result-content");
+  if (contentContainer) {
+    contentContainer.innerHTML = '<div class="text-gray-400 text-center py-12">Executing prompt...</div>';
+  }
+  
+  const modelSelect = document.getElementById("model-select");
+  const systemPrompt = document.getElementById("system-prompt").value;
+  const userPrompt = document.getElementById("user-prompt").value;
+  const temperature = parseFloat(document.getElementById("temperature-slider").value);
+  const maxTokens = parseInt(document.getElementById("max-tokens-slider").value);
+  const topP = parseFloat(document.getElementById("top-p-slider").value);
+  const iterations = parseInt(document.getElementById("iteration-count").value);
+  
+  // Validation
+  if (!modelSelect.value) {
+    alert("Please select a model");
+    return;
+  }
+  
+  if (!userPrompt.trim()) {
+    alert("Please enter a user prompt");
+    return;
+  }
+  
+  // Disable button
+  const button = document.getElementById("execute-btn");
+  button.disabled = true;
+  button.textContent = "Executing...";
+  
+  // Send request
+  fetch("/api/prompts/execute", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": document.querySelector("[name='csrf-token']").content
+    },
+    body: JSON.stringify({
+      prompt: {
+        system_prompt: systemPrompt,
+        user_prompt: userPrompt,
+        selected_model: modelSelect.value,
+        parameters: {
+          temperature: temperature,
+          max_tokens: maxTokens,
+          top_p: topP
+        }
+      },
+      iterations: iterations
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.execution_id) {
+      // Start polling for results
+      pollResults(data.execution_id);
+    } else {
+      alert("Error: " + (data.error || "Failed to execute prompt"));
+    }
+  })
+  .catch(error => {
+    console.error("Execution error:", error);
+    alert("Failed to execute prompt: " + error.message);
+  })
+  .finally(() => {
+    button.disabled = false;
+    button.textContent = "Execute";
+  });
+}
+
+function pollResults(executionId) {
+  // Clear any existing polling first
+  if (currentPollInterval) {
+    clearInterval(currentPollInterval);
+  }
+  
+  // Clear all other intervals too
+  allPollIntervals.forEach(interval => {
+    clearInterval(interval);
+  });
+  allPollIntervals = [];
+  
+  console.log(`Starting polling for execution ${executionId}`);
+  
+  currentPollInterval = setInterval(async () => {
+    try {
+      const response = await fetch(`/api/prompts/${executionId}/status`);
+      const data = await response.json();
+      
+      console.log(`Polling execution ${executionId}:`, data.completed ? "completed" : "in progress");
+      
+      if (data.completed) {
+        clearInterval(currentPollInterval);
+        currentPollInterval = null;
+        console.log(`Execution ${executionId} completed, stopping polling`);
+        displayResults(data);
+      }
+    } catch (error) {
+      console.error(`Polling error for execution ${executionId}:`, error);
+      clearInterval(currentPollInterval);
+      currentPollInterval = null;
+    }
+  }, 1000);
+  
+  // Keep track of all intervals
+  allPollIntervals.push(currentPollInterval);
+}
+
+function displayResults(data) {
+  console.log("Displaying results:", data);
+  const tabsContainer = document.getElementById("result-tabs");
+  const contentContainer = document.getElementById("result-content");
+  
+  // Clear existing content completely
+  while (tabsContainer.firstChild) {
+    tabsContainer.removeChild(tabsContainer.firstChild);
+  }
+  while (contentContainer.firstChild) {
+    contentContainer.removeChild(contentContainer.firstChild);
+  }
+  
+  // Store results data for later use
+  resultsData[data.execution.id] = data;
+  
+  // Create tabs for each result
+  data.results.forEach((result, index) => {
+    // Create tab
+    const tab = document.createElement("button");
+    tab.className = `px-3 py-1 ${index === 0 ? 'bg-card text-primary' : 'text-muted'} hover:text-primary`;
+    tab.textContent = `#${result.iteration_number}`;
+    tab.dataset.iteration = result.iteration_number;
+    tab.onclick = () => switchTab(result.iteration_number);
+    tabsContainer.appendChild(tab);
+    
+    // Create content
+    const content = document.createElement("div");
+    content.id = `result-${result.iteration_number}`;
+    content.className = index === 0 ? "block" : "hidden";
+    content.innerHTML = `
+      <div class="bg-card rounded-lg p-4 result-card">
+        <div class="flex justify-between items-start mb-3">
+          <div class="flex items-start space-x-3">
+            <input type="checkbox" 
+                   class="mt-1"
+                   onchange="toggleResultSelection(${data.execution.id}, ${result.iteration_number}, this)">
+            <div>
+              <h4 class="font-semibold text-white">Iteration #${result.iteration_number}</h4>
+              <p class="text-sm text-gray-400">
+                Model: ${data.execution.prompt.selected_model} | 
+                Time: ${result.response_time_ms}ms | 
+                Tokens: ${result.tokens_used?.input || 0}/${result.tokens_used?.output || 0}
+              </p>
+            </div>
+          </div>
+          <div class="flex space-x-2">
+            <button class="text-muted hover:text-primary" title="Copy" onclick="copyResultText(${data.execution.id}, ${result.iteration_number})">📋</button>
+            <button class="text-muted hover:text-primary" title="Save">💾</button>
+          </div>
+        </div>
+        <div class="prose prose-invert max-w-none">
+          <pre class="whitespace-pre-wrap text-white bg-gray-800 p-4 rounded-lg">${escapeHtml(result.response_text || result.error_message || "No response")}</pre>
+        </div>
+        <div class="flex items-center space-x-4 mt-4 pt-4 border-t border-default">
+          <button class="text-muted hover:text-primary">👍</button>
+          <button class="text-muted hover:text-primary">👎</button>
+          <button class="text-sm text-gray-400 hover:text-white"
+                  onclick="copyResultText(${data.execution.id}, ${result.iteration_number})">
+            Copy
+          </button>
+          <div class="relative inline-block">
+            <button class="text-sm text-secondary hover:text-primary"
+                    onclick="this.nextElementSibling.classList.toggle('hidden')">
+              Export ▼
+            </button>
+            <div class="hidden absolute left-0 mt-1 bg-card border border-default rounded-lg shadow-lg z-10">
+              <button class="block w-full text-left px-3 py-1 text-sm hover:bg-hover"
+                      onclick="exportResult(${data.execution.id}, ${result.iteration_number}, 'json')">
+                Export as JSON
+              </button>
+              <button class="block w-full text-left px-3 py-1 text-sm hover:bg-hover"
+                      onclick="exportResult(${data.execution.id}, ${result.iteration_number}, 'markdown')">
+                Export as Markdown
+              </button>
+            </div>
+          </div>
+          <button class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" 
+                  onclick="showCodeModal(${data.execution.id}, ${result.iteration_number})">
+            Get Code
+          </button>
+        </div>
+      </div>
+    `;
+    contentContainer.appendChild(content);
+  });
+}
+
+function switchTab(iteration) {
+  // Update tab styles
+  document.querySelectorAll("#result-tabs button").forEach(tab => {
+    if (tab.dataset.iteration == iteration) {
+      tab.className = "px-3 py-1 bg-card text-primary hover:text-primary";
+    } else {
+      tab.className = "px-3 py-1 text-muted hover:text-primary";
+    }
+  });
+  
+  // Update content visibility
+  document.querySelectorAll("#result-content > div").forEach(content => {
+    if (content.id === `result-${iteration}`) {
+      content.className = "block";
+    } else {
+      content.className = "hidden";
+    }
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function copyResultText(executionId, iterationNumber) {
+  const data = resultsData[executionId];
+  if (data) {
+    const result = data.results.find(r => r.iteration_number === iterationNumber);
+    if (result && result.response_text) {
+      navigator.clipboard.writeText(result.response_text).then(() => {
+        // Visual feedback instead of alert
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = "✓ Copied!";
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 2000);
+      }).catch(err => {
+        console.error("Failed to copy:", err);
+        alert("Failed to copy to clipboard");
+      });
+    }
+  }
+}
+
+function exportResult(executionId, iterationNumber, format) {
+  // Implementation for export
+  console.log(`Export ${format} for execution ${executionId}, iteration ${iterationNumber}`);
+}
+
+function toggleResultSelection(executionId, iterationNumber, checkbox) {
+  // Implementation for result selection
+  console.log(`Toggle selection for execution ${executionId}, iteration ${iterationNumber}`);
+}
+
+// Make showCodeModal available globally
+let currentExecutionId = null;
+let currentIterationNumber = null;
+
+window.showCodeModal = function(executionId, iterationNumber) {
+  const modal = document.getElementById('code-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    currentExecutionId = executionId;
+    currentIterationNumber = iterationNumber;
+    
+    // Reset to Python tab
+    switchCodeLanguage('python');
+  }
+};
+
+function loadCodeForResult(executionId, iterationNumber, language = 'python') {
+  fetch(`/api/prompts/${executionId}/code?iteration=${iterationNumber}&language=${language}`, {
+    headers: {
+      "Accept": "application/json",
+      "X-CSRF-Token": document.querySelector("[name='csrf-token']").content
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    const codeContent = document.getElementById('code-content');
+    const codeStatus = document.getElementById('code-status');
+    if (codeContent) {
+      codeContent.textContent = data.code;
+    }
+    if (codeStatus) {
+      codeStatus.textContent = `${data.provider || ''} API - ${data.model || ''}`;
+    }
+  })
+  .catch(error => {
+    console.error("Error loading code:", error);
+    const codeContent = document.getElementById('code-content');
+    if (codeContent) {
+      codeContent.textContent = "Error loading code: " + error.message;
+    }
+  });
+}
+
+function switchCodeLanguage(language) {
+  // Update tab styles
+  ['python', 'javascript', 'curl'].forEach(lang => {
+    const tab = document.getElementById(`${lang}-tab`);
+    if (tab) {
+      if (lang === language) {
+        tab.className = "px-4 py-2 text-primary border-b-2 border-blue-500";
+      } else {
+        tab.className = "px-4 py-2 text-muted hover:text-primary";
+      }
+    }
+  });
+  
+  // Load code for selected language
+  if (currentExecutionId && currentIterationNumber) {
+    loadCodeForResult(currentExecutionId, currentIterationNumber, language);
+  }
+}
+
+function copyCode() {
+  const codeContent = document.getElementById('code-content');
+  if (codeContent) {
+    navigator.clipboard.writeText(codeContent.textContent).then(() => {
+      const button = event.target;
+      const originalText = button.textContent;
+      button.textContent = "Copied!";
+      button.classList.add("bg-green-500", "text-white");
+      
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.classList.remove("bg-green-500", "text-white");
+      }, 2000);
+    }).catch(error => {
+      console.error("Failed to copy:", error);
+      alert("Failed to copy to clipboard");
+    });
+  }
+}
+</script>
+
+<!-- Price Reference Modal -->
+<div id="price-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-secondary rounded-lg w-[80%] max-w-6xl h-[80%] flex flex-col">
+    <div class="flex justify-between items-center p-4 border-b border-default">
+      <h2 class="text-xl font-semibold">Price Reference</h2>
+      <button id="close-modal" class="text-muted hover:text-primary text-2xl">×</button>
+    </div>
+    <div class="flex-1 p-4">
+      <iframe src="https://pricepertoken.com/" class="w-full h-full rounded-lg"></iframe>
+    </div>
+    <div class="p-4 border-t border-default">
+      <a href="https://pricepertoken.com/" target="_blank" class="text-blue-500 hover:underline">
+        Open in new tab →
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Code Generation Modal -->
+<div id="code-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-secondary rounded-lg w-[80%] max-w-4xl max-h-[80%] flex flex-col">
+    <div class="flex justify-between items-center p-4 border-b border-default">
+      <h2 class="text-xl font-semibold text-primary">Get Code</h2>
+      <button onclick="document.getElementById('code-modal').classList.add('hidden')" class="text-muted hover:text-primary text-2xl">×</button>
+    </div>
+    
+    <!-- Language Tabs -->
+    <div class="flex border-b border-default px-4">
+      <button id="python-tab"
+              onclick="switchCodeLanguage('python')"
+              class="px-4 py-2 text-primary border-b-2 border-blue-500">
+        Python
+      </button>
+      <button id="javascript-tab"
+              onclick="switchCodeLanguage('javascript')"
+              class="px-4 py-2 text-muted hover:text-primary">
+        JavaScript
+      </button>
+      <button id="curl-tab"
+              onclick="switchCodeLanguage('curl')"
+              class="px-4 py-2 text-muted hover:text-primary">
+        cURL
+      </button>
+    </div>
+    
+    <!-- Code Content -->
+    <div class="flex-1 p-4 overflow-auto">
+      <pre class="bg-card rounded-lg p-4 text-primary font-mono text-sm overflow-x-auto"><code id="code-content">Loading...</code></pre>
+    </div>
+    
+    <!-- Actions -->
+    <div class="flex justify-between items-center p-4 border-t border-default">
+      <div class="text-sm text-muted">
+        <span id="code-status"></span>
+      </div>
+      <div class="flex space-x-3">
+        <button onclick="copyCode()"
+                class="px-4 py-2 bg-card text-secondary border border-default rounded-lg hover:bg-hover">
+          Copy to Clipboard
+        </button>
+        <button onclick="document.getElementById('code-modal').classList.add('hidden')"
+                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

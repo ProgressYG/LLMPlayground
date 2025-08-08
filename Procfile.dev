@@ -1,0 +1,3 @@
+web: bin/rails server -p 3000
+css: bin/rails tailwindcss:watch --debug
+llm: source venv/bin/activate && cd lib && python llm_api_server.py

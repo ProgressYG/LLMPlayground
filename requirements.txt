@@ -1,0 +1,21 @@
+# Python dependencies for LLM API Playground
+
+# Environment variables
+python-dotenv==1.0.1
+
+# LLM API clients
+openai==1.57.0
+anthropic==0.41.0
+google-generativeai==0.8.3
+
+# Async processing
+aiohttp==3.11.11
+asyncio==3.4.3
+
+# Web framework for Python service
+fastapi==0.115.6
+uvicorn==0.34.0
+
+# Utilities
+pydantic==2.10.5
+httpx==0.28.1
