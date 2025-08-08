@@ -12,16 +12,12 @@ class Api::PromptsController < ApplicationController
       started_at: Time.current
     )
     
-    # Check if streaming is requested
-    streaming = params[:streaming] == 'true' || params[:streaming] == true
-    
-    # Call Python LLM service with optional streaming
-    LlmExecutionJob.perform_later(execution.id, streaming)
+    # Call Python LLM service (streaming disabled)
+    LlmExecutionJob.perform_later(execution.id, false)
     
     render json: {
       execution_id: execution.id,
-      status: 'started',
-      streaming: streaming
+      status: 'started'
     }
   end
   
