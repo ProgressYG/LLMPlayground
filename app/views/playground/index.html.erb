@@ -2,7 +2,10 @@
   <!-- Header -->
   <header class="bg-secondary border-b border-default px-6 py-4">
     <div class="flex justify-between items-center">
-      <h1 class="text-2xl font-bold text-white">LLM API Playground</h1>
+      <div class="flex items-center space-x-3">
+        <img src="/images/YGsignature.png" alt="YG Quantum Leap" class="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity" onclick="showLogoModal()">
+        <h1 class="text-2xl font-bold text-white">LLM API Playground</h1>
+      </div>
       
       <!-- API Status Indicator -->
       <div class="flex items-center space-x-2" data-controller="api-status">
@@ -117,7 +120,7 @@
         </div>
         
         <!-- Tab Content -->
-        <div id="result-content" class="min-h-[300px] max-h-[600px] overflow-y-auto">
+        <div id="result-content" class="min-h-[300px] max-h-[600px] overflow-y-auto watermark-bg">
           <div class="text-muted text-center py-12">
             No results yet. Execute a prompt to see results here.
           </div>
@@ -624,6 +627,33 @@ function copyCode() {
     });
   }
 }
+
+// Logo Modal Functions
+function showLogoModal() {
+  const modal = document.getElementById('logo-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+  }
+}
+
+function hideLogoModal(event) {
+  // If clicking on the backdrop or close button
+  if (!event || event.target === event.currentTarget) {
+    const modal = document.getElementById('logo-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = ''; // Restore scrolling
+    }
+  }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    hideLogoModal();
+  }
+});
 </script>
 
 <!-- Price Reference Modal -->
@@ -641,6 +671,16 @@ function copyCode() {
         Open in new tab →
       </a>
     </div>
+  </div>
+</div>
+
+<!-- Logo Modal -->
+<div id="logo-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onclick="hideLogoModal(event)">
+  <div class="relative">
+    <img src="/images/YGsignature.png" alt="YG Quantum Leap" class="max-w-[90vw] max-h-[90vh] w-auto h-auto rounded-lg shadow-2xl">
+    <button onclick="hideLogoModal()" class="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-70 transition-all">
+      <span class="text-2xl">×</span>
+    </button>
   </div>
 </div>
 
