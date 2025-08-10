@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: llm_postgres
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-llmplay}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-llm_play_production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - llm_network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-llmplay}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for ActionCable and caching
+  redis:
+    image: redis:7-alpine
+    container_name: llm_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - llm_network
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Python FastAPI Server
+  python_api:
+    build:
+      context: ..
+      dockerfile: docker/python/Dockerfile
+    container_name: llm_python_api
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY}
+      PYTHONUNBUFFERED: 1
+    networks:
+      - llm_network
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../lib:/app/lib:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Rails Application
+  rails:
+    build:
+      context: ..
+      dockerfile: docker/rails/Dockerfile
+    container_name: llm_rails
+    environment:
+      RAILS_ENV: production
+      DATABASE_URL: postgresql://${DB_USERNAME:-llmplay}:${DB_PASSWORD:-password}@postgres:5432/${DB_NAME:-llm_play_production}
+      REDIS_URL: redis://redis:6379/1
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      RAILS_LOG_TO_STDOUT: 'true'
+      PYTHON_API_URL: http://python_api:8000
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      python_api:
+        condition: service_healthy
+    networks:
+      - llm_network
+    ports:
+      - "3000:3000"
+    volumes:
+      - rails_storage:/rails/storage
+      - rails_log:/rails/log
+      - ./rails/master.key:/rails/config/master.key:ro
+    command: bash -c "bundle exec rails db:migrate && bundle exec rails server -b 0.0.0.0"
+
+  # Nginx Reverse Proxy
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: llm_nginx
+    depends_on:
+      - rails
+      - python_api
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - llm_network
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx_log:/var/log/nginx
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  llm_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rails_storage:
+    driver: local
+  rails_log:
+    driver: local
+  nginx_log:
+    driver: local
