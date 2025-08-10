@@ -5,6 +5,7 @@ import time
 import asyncio
 from .base_llm import BaseLLM, LLMResponse
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -85,15 +86,46 @@ class GeminiLLM(BaseLLM):
                 top_p=top_p
             )
             
-            # Generate response (Gemini SDK is synchronous, so we run in executor)
-            response = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.model.generate_content(
-                    full_prompt,
-                    generation_config=generation_config,
-                    safety_settings=self.safety_settings
-                )
-            )
+            # Generate response with retry logic for 500 errors
+            max_retries = 3
+            retry_count = 0
+            response = None
+            last_error = None
+            
+            while retry_count < max_retries:
+                try:
+                    # Generate response (Gemini SDK is synchronous, so we run in executor)
+                    response = await asyncio.get_event_loop().run_in_executor(
+                        None,
+                        lambda: self.model.generate_content(
+                            full_prompt,
+                            generation_config=generation_config,
+                            safety_settings=self.safety_settings
+                        )
+                    )
+                    break  # Success, exit retry loop
+                    
+                except Exception as e:
+                    error_msg = str(e)
+                    # Check if it's a 500 Internal Server Error
+                    if "500" in error_msg or "internal error" in error_msg.lower():
+                        retry_count += 1
+                        last_error = e
+                        
+                        if retry_count < max_retries:
+                            # Exponential backoff with jitter
+                            wait_time = (2 ** retry_count) + random.uniform(0, 1)
+                            logger.warning(f"Gemini API 500 error, retrying in {wait_time:.1f}s (attempt {retry_count}/{max_retries})")
+                            await asyncio.sleep(wait_time)
+                        else:
+                            logger.error(f"Gemini API failed after {max_retries} retries: {error_msg}")
+                            raise e
+                    else:
+                        # Not a 500 error, don't retry
+                        raise e
+            
+            if response is None and last_error:
+                raise last_error
             
             response_time = int((time.time() - start_time) * 1000)
             
@@ -179,13 +211,24 @@ class GeminiLLM(BaseLLM):
             logger.error(f"Gemini generation error: {e}")
             response_time = int((time.time() - start_time) * 1000)
             
+            # Provide more user-friendly error messages
+            error_msg = str(e)
+            if "500" in error_msg or "internal error" in error_msg.lower():
+                error_msg = "Gemini API is experiencing temporary issues. The system attempted multiple retries but the error persists. Please try again in a few moments or use a different model (Gemini 2.5 Flash is recommended as an alternative)."
+            elif "403" in error_msg:
+                error_msg = "API key authentication failed. Please check your Gemini API key configuration."
+            elif "429" in error_msg:
+                error_msg = "Rate limit exceeded. Please wait a moment before trying again."
+            elif "400" in error_msg:
+                error_msg = "Invalid request. Please check your prompt format and parameters."
+            
             return LLMResponse(
                 text="",
                 model=self.model_id,
                 tokens_used={'input': 0, 'output': 0, 'total': 0},
                 response_time_ms=response_time,
                 status="error",
-                error_message=str(e)
+                error_message=error_msg
             )
     
     async def stream_generate(
