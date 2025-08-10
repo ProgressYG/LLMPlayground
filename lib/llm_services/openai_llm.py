@@ -16,8 +16,13 @@ class OpenAILLM(BaseLLM):
         # Map our model IDs to OpenAI model names
         self.model_mapping = {
             'gpt-4o-mini': 'gpt-4o-mini',
-            'gpt-4o': 'gpt-4o'
+            'gpt-4o': 'gpt-4o',
+            'gpt-5': 'gpt-5-2025-08-07',
+            'gpt-5-mini': 'gpt-5-mini-2025-08-07'
         }
+        
+        # Models that don't support temperature/top_p
+        self.reasoning_models = {'gpt-5', 'gpt-5-mini'}
         
     async def generate(
         self,
@@ -41,11 +46,18 @@ class OpenAILLM(BaseLLM):
             completion_params = {
                 "model": self.model_mapping.get(self.model_id, self.model_id),
                 "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "top_p": top_p,
                 "stream": False
             }
+            
+            # GPT-5 models use different parameter names
+            if self.model_id in self.reasoning_models:
+                # GPT-5 uses max_completion_tokens instead of max_tokens
+                completion_params["max_completion_tokens"] = max_tokens
+            else:
+                # Other models use max_tokens
+                completion_params["max_tokens"] = max_tokens
+                completion_params["temperature"] = temperature
+                completion_params["top_p"] = top_p
             
             response = await self.retry_with_exponential_backoff(
                 self.client.chat.completions.create,
@@ -115,11 +127,18 @@ class OpenAILLM(BaseLLM):
             completion_params = {
                 "model": self.model_mapping.get(self.model_id, self.model_id),
                 "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "top_p": top_p,
                 "stream": True
             }
+            
+            # GPT-5 models use different parameter names
+            if self.model_id in self.reasoning_models:
+                # GPT-5 uses max_completion_tokens instead of max_tokens
+                completion_params["max_completion_tokens"] = max_tokens
+            else:
+                # Other models use max_tokens
+                completion_params["max_tokens"] = max_tokens
+                completion_params["temperature"] = temperature
+                completion_params["top_p"] = top_p
             
             stream = await self.client.chat.completions.create(
                 **completion_params

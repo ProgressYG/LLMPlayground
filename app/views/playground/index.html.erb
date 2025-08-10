@@ -233,11 +233,19 @@
       <!-- Reference -->
       <div class="bg-secondary rounded-lg p-4">
         <h3 class="text-gray-200 text-sm font-medium mb-4">📊 Reference</h3>
-        <button id="price-info-btn"
-                class="w-full px-4 py-2 bg-card text-secondary border border-default rounded-lg hover:bg-hover"
-                data-controller="price-modal">
-          Price Info
-        </button>
+        <div class="space-y-2">
+          <button id="price-info-btn"
+                  class="w-full px-4 py-2 bg-card text-secondary border border-default rounded-lg hover:bg-hover"
+                  data-controller="price-modal">
+            💰 Price Info
+          </button>
+          <button id="hyperparameter-info-btn"
+                  class="w-full px-4 py-2 bg-card text-secondary border border-default rounded-lg hover:bg-hover"
+                  data-controller="hyperparameter-modal"
+                  data-action="click->hyperparameter-modal#open">
+            ⚙️ Hyperparameter Info
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -670,6 +678,208 @@ document.addEventListener('keydown', function(event) {
       <a href="https://pricepertoken.com/" target="_blank" class="text-blue-500 hover:underline">
         Open in new tab →
       </a>
+    </div>
+  </div>
+</div>
+
+<!-- Hyperparameter Info Modal -->
+<div id="hyperparameter-modal" 
+     class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+     data-controller="hyperparameter-modal"
+     data-action="click->hyperparameter-modal#closeOnBackground">
+  <div class="bg-gradient-to-br from-blue-50 to-pink-50 rounded-2xl w-[90%] max-w-7xl max-h-[90%] overflow-hidden shadow-2xl">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-100 to-purple-100 px-6 py-4 border-b border-blue-200">
+      <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-800">
+          ⚙️ LLM Hyperparameter Reference
+        </h2>
+        <button data-action="click->hyperparameter-modal#close" 
+                class="text-gray-500 hover:text-gray-700 text-3xl font-light transition-colors">
+          ×
+        </button>
+      </div>
+    </div>
+    
+    <!-- Content -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+      <!-- OpenAI Section -->
+      <div class="mb-8">
+        <h3 class="text-xl font-bold text-gray-700 mb-4 flex items-center">
+          <span class="bg-green-100 text-green-700 px-3 py-1 rounded-lg mr-3">OpenAI</span>
+        </h3>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-gradient-to-r from-green-50 to-blue-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Model</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Max Tokens</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Temperature</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Top-P</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Special Parameters</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Notes</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr class="hover:bg-blue-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-800">GPT-4o</td>
+                <td class="px-4 py-3 text-gray-600">4,096–16,384</td>
+                <td class="px-4 py-3 text-gray-600">0.0–2.0</td>
+                <td class="px-4 py-3 text-gray-600">0.0–1.0</td>
+                <td class="px-4 py-3 text-gray-600">—</td>
+                <td class="px-4 py-3 text-gray-600">All parameters supported</td>
+              </tr>
+              <tr class="hover:bg-blue-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-800">GPT-4o-mini</td>
+                <td class="px-4 py-3 text-gray-600">4,096–16,384</td>
+                <td class="px-4 py-3 text-gray-600">0.0–2.0</td>
+                <td class="px-4 py-3 text-gray-600">0.0–1.0</td>
+                <td class="px-4 py-3 text-gray-600">—</td>
+                <td class="px-4 py-3 text-gray-600">All parameters supported</td>
+              </tr>
+              <tr class="hover:bg-yellow-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-800">
+                  GPT-5 <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">NEW</span>
+                </td>
+                <td class="px-4 py-3 text-gray-600">
+                  <div>Input: 272K</div>
+                  <div>Output: 128K</div>
+                  <div class="text-xs text-gray-500">Total: 400K</div>
+                </td>
+                <td class="px-4 py-3 text-gray-400">Not supported</td>
+                <td class="px-4 py-3 text-gray-400">Not supported</td>
+                <td class="px-4 py-3 text-gray-600">
+                  <div class="text-xs">
+                    <div><code class="bg-gray-100 px-1 rounded">reasoning.effort</code>: minimal/low/medium/high</div>
+                    <div><code class="bg-gray-100 px-1 rounded">verbosity</code>: low/medium/high</div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-gray-600">
+                  <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">Min 2000 tokens</span>
+                </td>
+              </tr>
+              <tr class="hover:bg-yellow-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-800">
+                  GPT-5-mini <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">NEW</span>
+                </td>
+                <td class="px-4 py-3 text-gray-600">
+                  <div>Input: 272K</div>
+                  <div>Output: 128K</div>
+                  <div class="text-xs text-gray-500">Total: 400K</div>
+                </td>
+                <td class="px-4 py-3 text-gray-400">Not supported</td>
+                <td class="px-4 py-3 text-gray-400">Not supported</td>
+                <td class="px-4 py-3 text-gray-600">
+                  <div class="text-xs">
+                    <div><code class="bg-gray-100 px-1 rounded">reasoning.effort</code>: minimal/low/medium/high</div>
+                    <div><code class="bg-gray-100 px-1 rounded">verbosity</code>: low/medium/high</div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-gray-600">
+                  <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">Min 2000 tokens</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Anthropic Section -->
+      <div class="mb-8">
+        <h3 class="text-xl font-bold text-gray-700 mb-4 flex items-center">
+          <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg mr-3">Anthropic (Claude)</span>
+        </h3>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-gradient-to-r from-purple-50 to-pink-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Model</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Max Tokens</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Temperature</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Top-P</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Notes</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr class="hover:bg-purple-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-800">Claude 3.5 Haiku</td>
+                <td class="px-4 py-3 text-gray-600">8,192</td>
+                <td class="px-4 py-3 text-gray-600">0.0–1.0</td>
+                <td class="px-4 py-3 text-gray-600">0.0–1.0</td>
+                <td class="px-4 py-3 text-gray-600">All parameters supported</td>
+              </tr>
+              <tr class="hover:bg-purple-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-800">Claude Sonnet 4</td>
+                <td class="px-4 py-3 text-gray-600">64,000</td>
+                <td class="px-4 py-3 text-gray-600">0.0–1.0</td>
+                <td class="px-4 py-3 text-gray-600">0.0–1.0</td>
+                <td class="px-4 py-3 text-gray-600">All parameters supported</td>
+              </tr>
+              <tr class="hover:bg-purple-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-800">Claude Opus 4.1</td>
+                <td class="px-4 py-3 text-gray-600">32,000</td>
+                <td class="px-4 py-3 text-gray-600">0.0–1.0</td>
+                <td class="px-4 py-3 text-gray-600">0.0–1.0</td>
+                <td class="px-4 py-3 text-gray-600">All parameters supported</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Google Gemini Section -->
+      <div class="mb-8">
+        <h3 class="text-xl font-bold text-gray-700 mb-4 flex items-center">
+          <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mr-3">Google Gemini</span>
+        </h3>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-gradient-to-r from-blue-50 to-cyan-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Model</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Max Tokens</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Temperature</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Top-P</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Special Parameters</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Notes</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr class="hover:bg-blue-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-800">Gemini 2.5 Flash</td>
+                <td class="px-4 py-3 text-gray-600">8,192–65,536</td>
+                <td class="px-4 py-3 text-gray-600">0.0–2.0</td>
+                <td class="px-4 py-3 text-gray-600">0.0–1.0</td>
+                <td class="px-4 py-3 text-gray-600">
+                  <code class="bg-gray-100 px-1 rounded text-xs">thinking_budget</code>
+                </td>
+                <td class="px-4 py-3 text-gray-600">All parameters supported</td>
+              </tr>
+              <tr class="hover:bg-blue-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-800">Gemini 2.5 Pro</td>
+                <td class="px-4 py-3 text-gray-600">8,192–65,536</td>
+                <td class="px-4 py-3 text-gray-600">0.0–2.0</td>
+                <td class="px-4 py-3 text-gray-600">0.0–1.0</td>
+                <td class="px-4 py-3 text-gray-600">
+                  <code class="bg-gray-100 px-1 rounded text-xs">thinking_budget</code>
+                </td>
+                <td class="px-4 py-3 text-gray-600">All parameters supported</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Important Notes -->
+      <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200">
+        <h4 class="font-bold text-gray-700 mb-2">📌 Important Notes</h4>
+        <ul class="text-sm text-gray-600 space-y-1">
+          <li>• <strong>GPT-5 Models:</strong> No temperature/top_p support. Use reasoning.effort and verbosity instead.</li>
+          <li>• <strong>Claude Models:</strong> All models support temperature, top_p, and max_tokens_to_sample.</li>
+          <li>• <strong>Gemini Models:</strong> Support all sampling parameters plus thinking_budget for reasoning control.</li>
+          <li>• <strong>Max Tokens:</strong> Actual limits may vary based on API version and hosting environment.</li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>

@@ -97,6 +97,44 @@ class LlmModelsService
       max_tokens: 16384,
       context_window: 128000,
       supports_streaming: true
+    },
+    'gpt-5' => {
+      provider: 'openai',
+      display_name: 'GPT-5',
+      icon: '🚀',
+      characteristics: 'Advanced Reasoning',
+      pricing: {
+        input: 7.50,
+        output: 30.00,
+        display: '$7.50/$30.00'
+      },
+      max_tokens: 128000,  # Reasoning output
+      min_tokens: 2000,    # Minimum required
+      context_window: 400000,  # 272K input + 128K reasoning
+      supports_streaming: true,
+      parameters: {
+        reasoning_effort: ['minimal', 'low', 'medium', 'high'],
+        verbosity: ['low', 'medium', 'high']
+      }
+    },
+    'gpt-5-mini' => {
+      provider: 'openai',
+      display_name: 'GPT-5 Mini',
+      icon: '⚡',
+      characteristics: 'Fast Reasoning',
+      pricing: {
+        input: 1.50,
+        output: 6.00,
+        display: '$1.50/$6.00'
+      },
+      max_tokens: 128000,  # Reasoning output
+      min_tokens: 2000,    # Minimum required
+      context_window: 400000,  # 272K input + 128K reasoning
+      supports_streaming: true,
+      parameters: {
+        reasoning_effort: ['minimal', 'low', 'medium', 'high'],
+        verbosity: ['low', 'medium', 'high']
+      }
     }
   }.freeze
 

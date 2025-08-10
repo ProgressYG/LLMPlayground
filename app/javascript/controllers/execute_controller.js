@@ -36,6 +36,14 @@ export default class extends Controller {
       return
     }
     
+    // GPT-5 and GPT-5-mini validation for min tokens
+    if ((modelSelect.value === 'gpt-5' || modelSelect.value === 'gpt-5-mini') && maxTokens < 2000) {
+      alert("GPT-5 models require a minimum of 2000 max tokens. Please increase the Max Tokens value.")
+      document.getElementById("max-tokens-slider").value = 2000
+      document.getElementById("max-tokens-value").textContent = 2000
+      return
+    }
+    
     // Disable button
     this.element.disabled = true
     this.element.textContent = "Executing..."
