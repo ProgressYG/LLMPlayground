@@ -15,6 +15,7 @@
 - `requirements.txt`: Python 의존성
  - `Procfile.dev`: 개발 시 동시 실행 프로세스 정의(web/css/llm)
  - `bin/dev`: Foreman으로 `Procfile.dev` 실행(필요 시 foreman 설치)
+ - `start_servers.sh`: 간단 로컬 실행 스크립트(Rails/LLM 서버 동시 기동)
 
 ---
 

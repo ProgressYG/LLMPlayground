@@ -83,6 +83,12 @@ python lib/llm_api_server.py
 uvicorn lib.llm_api_server:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+### 간단 실행 스크립트 (선택)
+```bash
+./start_servers.sh
+```
+동시에 Rails(3000), Python(8000)을 백그라운드로 기동합니다.
+
 ---
 
 ## 💡 빠른 시작
@@ -160,6 +166,9 @@ pip install -r requirements.txt
 lsof -i :3000; lsof -i :8000 | cat
 kill -9 <PID>
 ```
+
+### CORS 또는 403 응답
+- `lib/llm_api_server.py`에서 CORS 허용 오리진은 기본 `http://localhost:3000`입니다. 다른 도메인/포트를 쓰면 여기에 추가하세요.
 
 ---
 

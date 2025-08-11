@@ -10,6 +10,7 @@
 - 실행: `bin/dev` → Rails(3000), FastAPI(8000), Tailwind watcher
 - 프로세스 확인: `Procfile.dev`에서 각 프로세스 정의(web/css/llm)
 - 권장: `rbenv/pyenv`, 별도 가상환경(venv) 사용, DB는 로컬 16.x
+ - 선택: `start_servers.sh`로 Rails/LLM 서버를 한 번에 실행 가능
 
 체크리스트
 - [ ] `.env`에 `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GEMINI_API_KEY` 설정
@@ -122,6 +123,7 @@ Tailwind with Rails
 SSE 구현 요령
 - FastAPI에서 `StreamingResponse`와 `text/event-stream` 헤더, `data: {...}\n\n` 규격 유지
 - Rails에서 `Net::HTTP`로 라인 단위 파싱, `[DONE]`/`{"done":true}` 처리 분기
+ - CORS: 기본 허용 오리진은 `http://localhost:3000`이므로 커스텀 포트/도메인 사용 시 추가 필요
 
 실습 과제 E
 - `/generate`에 `presence_penalty`, `frequency_penalty`(OpenAI 한정) 매개변수 지원과 유효성 검증 추가
