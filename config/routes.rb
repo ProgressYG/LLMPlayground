@@ -13,6 +13,7 @@ Rails.application.routes.draw do
       end
     end
     resources :templates
+    get 'usage_history', to: 'usage_history#index'
   end
   
   # Main playground
