@@ -39,37 +39,37 @@ if [ ! -z "$RAILS_PID" ] || [ ! -z "$PYTHON_PID" ]; then
 fi
 
 # Check if PostgreSQL is running
-if ! pg_isready -q 2>/dev/null; then
-    echo -e "${YELLOW}⚠️  PostgreSQL is not running. Attempting to start...${NC}"
-    if command -v brew &> /dev/null; then
-        brew services start postgresql@16 2>/dev/null || brew services start postgresql 2>/dev/null
-        sleep 2
-        if ! pg_isready -q 2>/dev/null; then
-            echo -e "${RED}❌ Failed to start PostgreSQL${NC}"
-            echo "   Please start it manually and try again"
-            exit 1
-        fi
-    else
-        echo -e "${RED}❌ PostgreSQL is not running and brew is not available${NC}"
-        echo "   Please start PostgreSQL manually"
-        exit 1
-    fi
-fi
-echo -e "${GREEN}✅ PostgreSQL is running${NC}"
+#if ! pg_isready -q 2>/dev/null; then
+#    echo -e "${YELLOW}⚠️  PostgreSQL is not running. Attempting to start...${NC}"
+#    if command -v brew &> /dev/null; then
+#        brew services start postgresql@16 2>/dev/null || brew services start postgresql 2>/dev/null
+#        sleep 2
+#        if ! pg_isready -q 2>/dev/null; then
+#            echo -e "${RED}❌ Failed to start PostgreSQL${NC}"
+#            echo "   Please start it manually and try again"
+#            exit 1
+#        fi
+#    else
+#        echo -e "${RED}❌ PostgreSQL is not running and brew is not available${NC}"
+#        echo "   Please start PostgreSQL manually"
+#        exit 1
+#    fi
+#fi
+#echo -e "${GREEN}✅ PostgreSQL is running${NC}"
 
 # Check for .env file
-if [ ! -f .env ]; then
-    echo -e "${YELLOW}⚠️  .env file not found${NC}"
-    if [ -f .env.example ]; then
-        cp .env.example .env
-        echo -e "${GREEN}✅ Created .env file from template${NC}"
-        echo -e "${YELLOW}   Please add your API keys to .env file${NC}"
-    else
-        echo -e "${RED}❌ No .env.example file found${NC}"
-        echo "   Please create .env file with your API keys"
-        exit 1
-    fi
-fi
+#if [ ! -f .env ]; then
+#    echo -e "${YELLOW}⚠️  .env file not found${NC}"
+#    if [ -f .env.example ]; then
+#        cp .env.example .env
+#        echo -e "${GREEN}✅ Created .env file from template${NC}"
+#        echo -e "${YELLOW}   Please add your API keys to .env file${NC}"
+#    else
+#        echo -e "${RED}❌ No .env.example file found${NC}"
+#        echo "   Please create .env file with your API keys"
+#        exit 1
+#    fi
+#fi
 
 # Check Python virtual environment
 if [ ! -d "venv" ]; then
@@ -173,7 +173,7 @@ if kill -0 $RAILS_PID 2>/dev/null && kill -0 $PYTHON_PID 2>/dev/null; then
     echo "  Rails: tail -f log/rails.log"
     echo "  Python: tail -f log/python_api.log"
     echo ""
-    
+
     # Keep the script running
     while true; do
         if ! kill -0 $RAILS_PID 2>/dev/null; then

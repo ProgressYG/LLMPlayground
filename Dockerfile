@@ -23,8 +23,10 @@ RUN pip install --break-system-packages --no-cache-dir -r requirements.txt
 COPY . .
 
 # Line ending 수정 및 실행 권한 부여
-RUN dos2unix start_servers.sh && chmod +x start_servers.sh
+RUN dos2unix start.sh && chmod +x start.sh
+
+RUN sed -i '/Starting Rails server/i rails db:create 2>/dev/null || echo "DB already exists"' start_servers.sh
 
 EXPOSE 3000 8000
 
-CMD ["./start_servers.sh"]
+CMD ["./start.sh"]
