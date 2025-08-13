@@ -1,6 +1,10 @@
 ## LLM API Playground
+https://llm.teamsp.pmirnc.io/
+(사내에서만 접근 가능)
 
 엔터프라이즈급 LLM API 프롬프트 테스팅 및 최적화 플랫폼
+
+
 
 ### 🚀 주요 기능
 - **다중 LLM 지원**: OpenAI(GPT-4o/4o-mini), Anthropic(Claude 3.5/4.x), Google(Gemini 2.5)
