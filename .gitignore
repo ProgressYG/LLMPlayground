@@ -38,3 +38,5 @@
 
 # YoYo AI version control directory
 .yoyo/
+.idea
+.venv
