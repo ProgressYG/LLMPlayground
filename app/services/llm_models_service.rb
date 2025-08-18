@@ -135,6 +135,34 @@ class LlmModelsService
         reasoning_effort: ['minimal', 'low', 'medium', 'high'],
         verbosity: ['low', 'medium', 'high']
       }
+    },
+    'gpt-4.1-mini' => {
+      provider: 'openai',
+      display_name: 'GPT-4.1 Mini',
+      icon: '💻',
+      characteristics: 'Coding & Analysis',
+      pricing: {
+        input: 0.40,
+        output: 1.60,
+        display: '$0.40/$1.60'
+      },
+      max_tokens: 16384,
+      context_window: 1000000,  # 1M tokens
+      supports_streaming: true
+    },
+    'gpt-4.1-nano' => {
+      provider: 'openai',
+      display_name: 'GPT-4.1 Nano',
+      icon: '⚡',
+      characteristics: 'Fast Classification',
+      pricing: {
+        input: 0.10,
+        output: 0.40,
+        display: '$0.10/$0.40'
+      },
+      max_tokens: 16384,
+      context_window: 1000000,  # 1M tokens
+      supports_streaming: true
     }
   }.freeze
 
