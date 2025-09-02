@@ -163,6 +163,20 @@ class LlmModelsService
       max_tokens: 16384,
       context_window: 1000000,  # 1M tokens
       supports_streaming: true
+    },
+    'gpt-4.1' => {
+      provider: 'openai',
+      display_name: 'GPT-4.1',
+      icon: '🔥',
+      characteristics: 'Advanced Performance',
+      pricing: {
+        input: 2.00,
+        output: 8.00,
+        display: '$2.00/$8.00'
+      },
+      max_tokens: 16384,
+      context_window: 1000000,  # 1M tokens
+      supports_streaming: true
     }
   }.freeze
 
