@@ -7,7 +7,10 @@ https://llm.teamsp.pmirnc.io/
 
 
 ### 🚀 주요 기능
-- **다중 LLM 지원**: OpenAI(GPT-4o/4o-mini), Anthropic(Claude 3.5/4.x), Google(Gemini 2.5)
+- **다중 LLM 지원**: 
+  - OpenAI: GPT-4o, GPT-4o-mini, GPT-5, GPT-5-mini, GPT-4.1, GPT-4.1-mini, GPT-4.1-nano
+  - Anthropic: Claude 3.5 Haiku, Claude Sonnet 4, Claude Opus 4.1
+  - Google: Gemini 2.5 Flash, Gemini 2.5 Pro
 - **파라미터 조정**: Temperature, Max Tokens, Top P 실시간 조정
 - **반복 실행**: 동일 프롬프트를 1–10회 반복하여 일관성 검증
 - **실시간 스트리밍**: SSE + ActionCable로 토큰 단위 스트리밍
@@ -97,7 +100,7 @@ uvicorn lib.llm_api_server:app --host 0.0.0.0 --port 8000 --reload
 
 ## 💡 빠른 시작
 1) 헤더의 🔑 API Status에서 키 인식 여부 확인
-2) 모델 선택 (예: `gpt-4o`, `claude-3-5-haiku-20241022`, `gemini-2.5-pro`)
+2) 모델 선택 (예: `gpt-4.1`, `gpt-4o`, `claude-opus-4-1-20250805`, `gemini-2.5-pro`)
 3) System/User Prompt 입력 후 파라미터 조정
 4) Iterations(1–10) 지정 후 Execute
 5) 결과 카드 클릭 → 코드 스니펫 모달에서 Python/JS/cURL 확인 및 복사

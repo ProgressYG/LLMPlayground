@@ -4,63 +4,84 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an LLM API Playground - an enterprise-grade prompt testing and optimization platform for AI models (OpenAI GPT, Anthropic Claude, Google Gemini). The project is designed as a professional tool for prompt engineers and AI developers to optimize prompts through iterative testing and parameter tuning on a single selected model.
+LLM API Playground - An enterprise-grade prompt testing and optimization platform for AI models. The project enables prompt engineers and AI developers to optimize prompts through iterative testing and parameter tuning on multiple LLM models.
+
+### Supported Models (12 total)
+- **OpenAI**: GPT-4o, GPT-4o-mini, GPT-5, GPT-5-mini, GPT-4.1, GPT-4.1-mini, GPT-4.1-nano
+- **Anthropic**: Claude 3.5 Haiku, Claude Sonnet 4, Claude Opus 4.1
+- **Google**: Gemini 2.5 Flash, Gemini 2.5 Pro
 
 ## Tech Stack
 
 ### Backend
-- **Python 3.11+**: LLM API integration layer, async processing, response streaming
-  - Key libraries: python-dotenv for API key management
-- **Ruby on Rails 7.1.2**: RESTful API endpoints, WebSocket communication, authentication
-  - Key gems: dotenv-rails for environment variables
-- **PostgreSQL 16.0**: Data persistence
-  - Location: `/Volumes/ygmac_external/pgdata`
+- **Ruby on Rails 8.0.2+**: RESTful API, WebSocket via ActionCable, authentication
+- **Python 3.11+**: FastAPI server for LLM API integration, async processing, SSE streaming
+- **PostgreSQL 16.0**: Data persistence (external volume: `/Volumes/ygmac_external/pgdata`)
+- **Redis**: ActionCable pub/sub and caching (optional)
 
 ### Frontend
 - **Tailwind CSS**: Dark mode UI, responsive 70:30 layout grid
 - **Stimulus.js**: Rails-integrated JavaScript framework
-- **Turbo**: Real-time updates
+- **Turbo**: Real-time updates without full page reloads
+- **Importmap**: No Node.js bundler required (Rails 8 default)
 
 ## Development Commands
 
 ### Initial Setup
 ```bash
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Install Ruby dependencies
+# Ruby dependencies
 bundle install
 
-# Setup database
+# Python virtual environment
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Database setup
 rails db:create
 rails db:migrate
 
-# Install Node packages
+# Install Tailwind CSS dependencies
 npm install
 ```
 
 ### Running the Application
 ```bash
-# Start Rails server
-rails server
-
-# Or use the development script
+# Recommended: Run all services together
 bin/dev
 
-# Run Python API service (if separate)
-python app/services/llm_service.py
+# This starts:
+# - Rails server on port 3000
+# - Python FastAPI on port 8000  
+# - Tailwind CSS watcher
 ```
 
-### Testing
+### Individual Services (if needed)
 ```bash
-# Run Rails tests
+# Rails only
+rails server
+
+# Python API only (separate terminal)
+source venv/bin/activate
+python lib/llm_api_server.py
+
+# Tailwind CSS watcher
+rails tailwindcss:watch
+```
+
+### Testing & Quality
+```bash
+# Rails tests
 rails test
 
-# Run Python tests
+# Python tests (if available)
 pytest
 
-# Run JavaScript tests
-npm test
+# Rails console for debugging
+rails console
+
+# Database console
+rails db
 ```
 
 ### Database Operations
@@ -71,86 +92,183 @@ rails generate migration MigrationName
 # Run migrations
 rails db:migrate
 
-# Rollback migration
+# Rollback
 rails db:rollback
 
-# Database console
-rails db
+# Reset database
+rails db:reset
+```
+
+### Docker Deployment
+```bash
+# Full stack with Docker Compose
+cd docker
+docker-compose up
+
+# Services included:
+# - PostgreSQL 16
+# - Redis
+# - Python FastAPI
+# - Rails app
+# - Nginx reverse proxy
 ```
 
 ## Architecture Overview
 
-### Directory Structure (Expected)
-```
-/
-├── app/
-│   ├── controllers/     # Rails API controllers
-│   ├── models/          # ActiveRecord models
-│   ├── services/        # Business logic & Python LLM services
-│   ├── javascript/      # Stimulus controllers
-│   └── views/           # Rails views (minimal, mostly API)
-├── config/
-│   ├── database.yml     # PostgreSQL configuration
-│   └── routes.rb        # API routing
-├── db/                  # Database migrations and schema
-├── lib/                 # Python LLM integration modules
-└── public/              # Static assets
-```
+### Request Flow
+1. **Frontend** → Rails API (`/api/prompts/execute`)
+2. **Rails** → Creates Prompt & Execution records → Queues `LlmExecutionJob`
+3. **Job** → Calls Python FastAPI server (`http://localhost:8000/generate`)
+4. **Python** → Calls LLM provider APIs (OpenAI/Anthropic/Google)
+5. **Streaming** → Python SSE → Rails ActionCable → Frontend real-time updates
 
-### Key Components
+### Key Services & Models
 
-1. **API Key Management**: Uses `.env` file for storing API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_GEMINI_API_KEY)
+#### Rails Services (`app/services/`)
+- `LlmModelsService`: Model definitions, pricing, capabilities
+- `ApiKeyManager`: API key validation and management
+- `CodeGeneratorService`: Generates Python/JS/cURL code snippets
+- `ExportService`: JSON/Markdown export functionality
+- `UsageHistoryService`: Token usage tracking
 
-2. **Model Selection System**: Dropdown interface supporting 7 LLM models with pricing information
+#### Python LLM Services (`lib/llm_services/`)
+- `base_llm.py`: Abstract base class for LLM providers
+- `openai_llm.py`: OpenAI GPT models (includes GPT-5 reasoning models)
+- `anthropic_llm.py`: Claude models implementation
+- `gemini_llm.py`: Google Gemini models
+- `llm_factory.py`: Factory pattern for LLM instantiation
 
-3. **Prompt System**: Separate System and User prompt inputs with template management
+#### Database Models
+- `Prompt`: System/user prompts, parameters, selected model
+- `Execution`: Iteration count, status tracking
+- `Result`: Response text, tokens used, timing
+- `Template`: Saved prompt templates
 
-4. **Parameter Controls**: Temperature (0-2), Max Tokens (1-4096), Top P (0-1) adjustable via sliders
+### API Endpoints
 
-5. **Iteration System**: Execute same prompt 1-10 times for consistency testing
+#### Rails API (`config/routes.rb`)
+- `POST /api/prompts/execute`: Execute prompt with iterations
+- `GET /api/prompts/:id/status`: Get execution status and results
+- `GET /api/prompts/:id/code`: Generate code snippets
+- `GET /api/prompts/:id/export`: Export results
+- `GET /api/models`: List available models
+- `GET /api/usage_history`: Token usage history
 
-6. **Results Display**: Tab-based interface showing individual results with comparison mode
+#### Python FastAPI (`lib/llm_api_server.py`)
+- `GET /health`: Health check
+- `GET /models`: Available models based on API keys
+- `POST /generate`: Single generation (stream or non-stream)
+- `POST /batch_generate`: Parallel batch execution
 
-## API Integration
+## Environment Variables
 
-### Supported Models
-- Claude 3.5 Haiku, Sonnet 4, Opus 4.1
-- Gemini 2.5 Flash, Pro
-- GPT-5 Mini, GPT-5o
-
-### Environment Variables
-Create a `.env` file in the root directory:
+Create `.env` file in root:
 ```bash
 # Required API Keys
-OPENAI_API_KEY=sk-xxxxxxxx
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxx
-GOOGLE_GEMINI_API_KEY=AIzaxxxxxxxx
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_GEMINI_API_KEY=AIza...
 
-# Optional Settings
+# Database (optional for development)
+DB_HOST=localhost
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+
+# Optional
+REDIS_URL=redis://localhost:6379/1
+PYTHON_API_URL=http://localhost:8000
 API_REQUEST_TIMEOUT=30
 API_MAX_RETRIES=3
 ```
 
-## UI/UX Guidelines
+## Adding New Models
 
-- **Layout**: 70% main workspace, 30% control panel
-- **Theme**: Dark mode by default (Tailwind slate color palette)
-- **Responsive**: Desktop-first, with tablet/mobile adaptations
-- **Components**: Card-based design with consistent spacing and borders
+To add a new LLM model:
 
-## Development Workflow
+1. **Update Rails Model Definition** (`app/services/llm_models_service.rb`):
+   - Add model to `MODELS` hash with pricing, tokens, capabilities
 
-1. Check API keys in `.env` before testing API features
-2. Use Rails conventions for controllers and models
-3. Keep Python services modular in `app/services/` or `lib/`
-4. Follow Stimulus.js patterns for frontend interactivity
-5. Maintain PostgreSQL database at specified external volume path
-6. Use Turbo for real-time updates without full page reloads
+2. **Update Python Model Mapping** (`lib/llm_services/openai_llm.py` or relevant provider):
+   - Add to `model_mapping` dictionary
+   - Handle any special parameters (e.g., reasoning models)
 
-## Important Notes
+3. **Update Code Generator** (`app/services/code_generator_service.rb`):
+   - Add model-specific code generation if needed
 
-- Database is stored on external volume at `/Volumes/ygmac_external/pgdata`
-- Project focuses on single model selection (not parallel multi-model testing)
-- Iteration feature runs same prompt multiple times for consistency verification
-- All API responses should be streamed in real-time when possible
-- Price reference modal embeds external pricing information
+## Model-Specific Considerations
+
+### GPT-5 Reasoning Models
+- Use `max_completion_tokens` instead of `max_tokens`
+- Don't support `temperature` or `top_p` parameters
+- Minimum 2000 tokens required
+
+### GPT-4.1 Series
+- Support 1M token context window
+- Standard OpenAI parameters apply
+
+### Claude Models
+- Support streaming via SSE
+- 200K token context window
+- System prompts supported
+
+### Gemini Models
+- Up to 1M token context window
+- Require combined system+user prompt format
+
+## Development Tips
+
+1. **Database Location**: PostgreSQL data stored at `/Volumes/ygmac_external/pgdata`
+2. **Streaming**: Uses Server-Sent Events (SSE) from Python → Rails ActionCable
+3. **Parameter Tuning**: Temperature (0-2), Max Tokens (1-128000), Top P (0-1)
+4. **Iteration Testing**: Run same prompt 1-10 times for consistency analysis
+5. **Code Export**: Automatic generation of implementation code in Python/JS/cURL
+
+## Common Issues & Solutions
+
+### Port Conflicts
+```bash
+lsof -i :3000 | grep LISTEN
+lsof -i :8000 | grep LISTEN
+# Kill if needed: kill -9 <PID>
+```
+
+### Python Module Issues
+```bash
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Database Connection
+```bash
+# Check PostgreSQL status
+brew services list | grep postgresql
+brew services restart postgresql@16
+
+# Verify connection
+rails db
+```
+
+### API Key Validation
+- Check `.env` file has correct keys
+- Verify in header: 🔑 API Status indicator
+- Keys are validated on startup
+
+## Project Structure
+
+```
+/
+├── app/
+│   ├── controllers/api/   # API endpoints
+│   ├── services/          # Business logic
+│   ├── models/           # ActiveRecord models
+│   ├── jobs/             # Background jobs
+│   └── javascript/       # Stimulus controllers
+├── lib/
+│   ├── llm_api_server.py # FastAPI server
+│   └── llm_services/     # Python LLM integrations
+├── config/
+│   ├── routes.rb         # Rails routing
+│   └── database.yml      # DB configuration
+├── docker/               # Docker deployment files
+└── db/                  # Migrations and schema
+```
