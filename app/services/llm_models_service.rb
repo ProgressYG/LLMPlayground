@@ -42,6 +42,20 @@ class LlmModelsService
       context_window: 200000,
       supports_streaming: true
     },
+    'claude-sonnet-4-5' => {
+      provider: 'anthropic',
+      display_name: 'Claude Sonnet 4.5',
+      icon: '⚡',
+      characteristics: 'Ultra-Fast & Smart',
+      pricing: {
+        input: 3.00,
+        output: 15.00,
+        display: '$3.00/$15.00'
+      },
+      max_tokens: 8192,
+      context_window: 200000,
+      supports_streaming: true
+    },
     'gemini-2.5-flash' => {
       provider: 'google',
       display_name: 'Gemini 2.5 Flash',

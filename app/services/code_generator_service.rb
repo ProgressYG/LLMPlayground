@@ -396,6 +396,8 @@ class CodeGeneratorService
       'claude-sonnet-4-20250514'
     when 'claude-opus-4-1-20250805'
       'claude-opus-4-1-20250805'
+    when 'claude-sonnet-4-5'
+      'claude-sonnet-4-5'
     else
       model
     end
