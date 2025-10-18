@@ -18,7 +18,8 @@ class AnthropicLLM(BaseLLM):
             'claude-3-5-haiku-20241022': 'claude-3-5-haiku-20241022',
             'claude-sonnet-4-20250514': 'claude-sonnet-4-20250514',
             'claude-opus-4-1-20250805': 'claude-opus-4-1-20250805',
-            'claude-sonnet-4-5': 'claude-sonnet-4-5'
+            'claude-sonnet-4-5': 'claude-sonnet-4-5',
+            'claude-haiku-4-5-20251001': 'claude-haiku-4-5-20251001'
         }
         
     async def generate(
@@ -42,8 +43,8 @@ class AnthropicLLM(BaseLLM):
                 "temperature": temperature
             }
             
-            # Claude Opus 4.1 and Sonnet 4.5 don't support both temperature and top_p
-            if 'opus-4-1' not in self.model_id and 'sonnet-4-5' not in self.model_id:
+            # Claude Opus 4.1, Sonnet 4.5, and Haiku 4.5 don't support both temperature and top_p
+            if 'opus-4-1' not in self.model_id and 'sonnet-4-5' not in self.model_id and 'haiku-4-5' not in self.model_id:
                 message_params["top_p"] = top_p
             
             # Add system prompt if provided
@@ -106,8 +107,8 @@ class AnthropicLLM(BaseLLM):
                 "stream": True
             }
             
-            # Claude Opus 4.1 and Sonnet 4.5 don't support both temperature and top_p
-            if 'opus-4-1' not in self.model_id and 'sonnet-4-5' not in self.model_id:
+            # Claude Opus 4.1, Sonnet 4.5, and Haiku 4.5 don't support both temperature and top_p
+            if 'opus-4-1' not in self.model_id and 'sonnet-4-5' not in self.model_id and 'haiku-4-5' not in self.model_id:
                 message_params["top_p"] = top_p
             
             if system_prompt:

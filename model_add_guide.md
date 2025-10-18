@@ -60,14 +60,14 @@ LLM_Play/
 
 ```ruby
 'your-model-id' => {
-  provider: 'openai|anthropic|google',    # 제공자 선택
-  display_name: 'Model Display Name',      # 드롭다운에 표시될 이름
+  provider: 'anthropic',    # 제공자 선택
+  display_name: 'Claude Haiku4.5-$1.00/$5.00',      # 드롭다운에 표시될 이름
   icon: '🔷',                              # 이모지 아이콘
-  characteristics: 'Brief Description',    # 특징 (예: 'Fast & Efficient')
+  characteristics: 'Fast & Efficiend',    # 특징 (예: 'Fast & Efficient')
   pricing: {
-    input: 0.00,                           # 입력 토큰 가격 (per 1M tokens)
-    output: 0.00,                          # 출력 토큰 가격 (per 1M tokens)
-    display: '$0.00/$0.00'                 # 표시용 문자열
+    input: 1.00,                           # 입력 토큰 가격 (per 1M tokens)
+    output: 5.00,                          # 출력 토큰 가격 (per 1M tokens)
+    display: '$1.00/$5.00'                 # 표시용 문자열
   },
   max_tokens: 4096,                        # 최대 출력 토큰 수
   context_window: 128000,                  # 컨텍스트 윈도우 크기
@@ -92,12 +92,12 @@ parameters: {
 MODELS = {
   # ... 기존 모델들 ...
 
-  'claude-opus-4-1-20250805' => { ... },   # 기존 Anthropic 마지막 모델
+  'claude-sonnet-4-5' => { ... },   # 기존 Anthropic 마지막 모델
 
   # ✅ 여기에 새 Anthropic 모델 추가
-  'claude-sonnet-4-5' => {
+  'claude-haiku-4-5-20251001' => {
     provider: 'anthropic',
-    display_name: 'Claude Sonnet 4.5',
+    display_name: 'Claude haiku 4.5',
     # ...
   },
 
@@ -128,8 +128,9 @@ class AnthropicLLM(BaseLLM):
             'claude-3-5-haiku-20241022': 'claude-3-5-haiku-20241022',
             'claude-sonnet-4-20250514': 'claude-sonnet-4-20250514',
             'claude-opus-4-1-20250805': 'claude-opus-4-1-20250805',
+            'claude-sonnet-4-5-20250929': 'claude-sonnet-4-5-20250929',
             # ✅ 여기에 추가
-            'claude-sonnet-4-5': 'claude-sonnet-4-5'
+            'claude-haiku-4-5-20251001': 'claude-haiku-4-5-20251001'
         }
 ```
 
@@ -194,9 +195,11 @@ def self.map_anthropic_model(model)
   when 'claude-opus-4-1-20250805'
     'claude-opus-4-1-20250805'
   # ✅ 여기에 추가
-  when 'claude-sonnet-4-5'
-    'claude-sonnet-4-5'
-  else
+  when 'claude-sonnet-4-5-20250929'
+    'claude-sonnet-4-5-20250929'
+  when 'claude-haiku-4-5-20251001'
+    'claude-haiku-4-5-20251001'
+    else
     model
   end
 end
@@ -341,10 +344,10 @@ end
 
 ### 요구사항
 
-- **Display Name**: Claude Sonnet 4.5
-- **Model ID**: `claude-sonnet-4-5`
-- **API Model Name**: `claude-sonnet-4-5`
-- **Pricing**: $3.00 (input) / $15.00 (output)
+- **Display Name**: Claude haiku 4.5
+- **Model ID**: `claude-haiku-4-5-20251001`
+- **API Model Name**: `claude-haiku-4-5-20251001`
+- **Pricing**: $1.00 (input) / $5.00 (output)
 - **Max Tokens**: 8,192
 - **Context Window**: 200K
 - **위치**: Anthropic 모델 섹션 마지막
@@ -354,22 +357,22 @@ end
 #### 1. `llm_models_service.rb` (Line 31 이후)
 
 ```ruby
-'claude-opus-4-1-20250805' => {
+'claude-sonnet-4-5' => {
   provider: 'anthropic',
-  display_name: 'Claude Opus 4.1',
-  icon: '🧠',
-  characteristics: 'Advanced Reasoning',
+  display_name: 'Claude Sonnet 4.5',
+  icon: '⚡',
+  characteristics: 'Ultra-Fast & Smart',
   pricing: {
-    input: 15.00,
-    output: 75.00,
-    display: '$15.00/$75.00'
+    input: 3.00,
+    output: 15.00,
+    display: '$3.00/$15.00'
   },
-  max_tokens: 4096,
+  max_tokens: 8192,
   context_window: 200000,
   supports_streaming: true
 },
 # ✅ 새 모델 추가
-'claude-sonnet-4-5' => {
+'claude-Haiku-4-5' => {
   provider: 'anthropic',
   display_name: 'Claude Sonnet 4.5',
   icon: '⚡',
@@ -386,6 +389,8 @@ end
 'gemini-2.5-flash' => {
   # 다음 provider 시작
 ```
+
+
 
 #### 2. `anthropic_llm.py` (Line 20)
 

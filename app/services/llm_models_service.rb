@@ -56,6 +56,20 @@ class LlmModelsService
       context_window: 200000,
       supports_streaming: true
     },
+    'claude-haiku-4-5-20251001' => {
+      provider: 'anthropic',
+      display_name: 'Claude Haiku 4.5',
+      icon: '⚡',
+      characteristics: 'Fast & Efficient',
+      pricing: {
+        input: 1.00,
+        output: 5.00,
+        display: '$1.00/$5.00'
+      },
+      max_tokens: 8192,
+      context_window: 200000,
+      supports_streaming: true
+    },
     'gemini-2.5-flash' => {
       provider: 'google',
       display_name: 'Gemini 2.5 Flash',
