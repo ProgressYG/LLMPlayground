@@ -42,7 +42,7 @@ class LlmModelsService
       context_window: 200000,
       supports_streaming: true
     },
-    'claude-sonnet-4-5' => {
+    'claude-sonnet-4-5-20250929' => {
       provider: 'anthropic',
       display_name: 'Claude Sonnet 4.5',
       icon: '⚡',

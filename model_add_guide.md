@@ -92,7 +92,7 @@ parameters: {
 MODELS = {
   # ... 기존 모델들 ...
 
-  'claude-sonnet-4-5' => { ... },   # 기존 Anthropic 마지막 모델
+  'claude-sonnet-4-5-20250929' => { ... },   # 기존 Anthropic 마지막 모델
 
   # ✅ 여기에 새 Anthropic 모델 추가
   'claude-haiku-4-5-20251001' => {
@@ -357,7 +357,7 @@ end
 #### 1. `llm_models_service.rb` (Line 31 이후)
 
 ```ruby
-'claude-sonnet-4-5' => {
+'claude-sonnet-4-5-20250929' => {
   provider: 'anthropic',
   display_name: 'Claude Sonnet 4.5',
   icon: '⚡',
@@ -399,7 +399,7 @@ self.model_mapping = {
     'claude-3-5-haiku-20241022': 'claude-3-5-haiku-20241022',
     'claude-sonnet-4-20250514': 'claude-sonnet-4-20250514',
     'claude-opus-4-1-20250805': 'claude-opus-4-1-20250805',
-    'claude-sonnet-4-5': 'claude-sonnet-4-5'  # ✅ 추가
+    'claude-sonnet-4-5-20250929': 'claude-sonnet-4-5-20250929'  # ✅ 추가
 }
 ```
 
@@ -414,8 +414,8 @@ def self.map_anthropic_model(model)
     'claude-sonnet-4-20250514'
   when 'claude-opus-4-1-20250805'
     'claude-opus-4-1-20250805'
-  when 'claude-sonnet-4-5'           # ✅ 추가
-    'claude-sonnet-4-5'
+  when 'claude-sonnet-4-5-20250929'           # ✅ 추가
+    'claude-sonnet-4-5-20250929'
   else
     model
   end
@@ -514,7 +514,7 @@ curl -X POST http://localhost:3000/api/prompts/execute \
     "prompt": {
       "system_prompt": "You are a helpful assistant",
       "user_prompt": "Say hello",
-      "selected_model": "claude-sonnet-4-5",
+      "selected_model": "claude-sonnet-4-5-20250929",
       "parameters": {
         "temperature": 0.7,
         "max_tokens": 100,
